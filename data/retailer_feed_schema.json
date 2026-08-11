@@ -1,0 +1,9 @@
+{
+  "description": "Authorized price feed schema for BuildYourPC",
+  "required": ["product_id", "store", "country", "currency", "price", "product_url"],
+  "optional": ["availability", "affiliate_url", "captured_at", "source"],
+  "notes": [
+    "Prefer official merchant/affiliate APIs or feeds.",
+    "Only use product URLs or scrapers where automated access is permitted by the retailer terms and robots policy."
+  ]
+}

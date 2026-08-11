@@ -1,0 +1,11 @@
+{
+  "products": {
+    "gpu-6600": [
+      {
+        "store": "Example Store",
+        "url": "https://example.com/product-page",
+        "note": "Only add URLs where automated fetching is permitted."
+      }
+    ]
+  }
+}

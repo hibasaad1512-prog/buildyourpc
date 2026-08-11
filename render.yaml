@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: buildyourpc
+    runtime: python
+    plan: free
+    rootDir: .
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend.app:app
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.4"
+      - key: KO_FI_URL
+        value: "https://ko-fi.com/simbawwyy00"

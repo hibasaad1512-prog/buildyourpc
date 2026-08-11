@@ -1,0 +1,2210 @@
+{
+  "currencies": {
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£",
+    "CAD": "CA$",
+    "AUD": "A$",
+    "MAD": "MAD",
+    "AED": "AED",
+    "SAR": "SAR",
+    "INR": "₹",
+    "JPY": "¥",
+    "BRL": "R$",
+    "TRY": "₺"
+  },
+  "countries": [
+    {
+      "code": "US",
+      "name": "United States",
+      "currency": "USD"
+    },
+    {
+      "code": "CA",
+      "name": "Canada",
+      "currency": "CAD"
+    },
+    {
+      "code": "GB",
+      "name": "United Kingdom",
+      "currency": "GBP"
+    },
+    {
+      "code": "FR",
+      "name": "France",
+      "currency": "EUR"
+    },
+    {
+      "code": "DE",
+      "name": "Germany",
+      "currency": "EUR"
+    },
+    {
+      "code": "ES",
+      "name": "Spain",
+      "currency": "EUR"
+    },
+    {
+      "code": "IT",
+      "name": "Italy",
+      "currency": "EUR"
+    },
+    {
+      "code": "NL",
+      "name": "Netherlands",
+      "currency": "EUR"
+    },
+    {
+      "code": "BE",
+      "name": "Belgium",
+      "currency": "EUR"
+    },
+    {
+      "code": "PT",
+      "name": "Portugal",
+      "currency": "EUR"
+    },
+    {
+      "code": "PL",
+      "name": "Poland",
+      "currency": "PLN"
+    },
+    {
+      "code": "MA",
+      "name": "Morocco",
+      "currency": "MAD"
+    },
+    {
+      "code": "AE",
+      "name": "United Arab Emirates",
+      "currency": "AED"
+    },
+    {
+      "code": "SA",
+      "name": "Saudi Arabia",
+      "currency": "SAR"
+    },
+    {
+      "code": "TR",
+      "name": "Türkiye",
+      "currency": "TRY"
+    },
+    {
+      "code": "IN",
+      "name": "India",
+      "currency": "INR"
+    },
+    {
+      "code": "JP",
+      "name": "Japan",
+      "currency": "JPY"
+    },
+    {
+      "code": "AU",
+      "name": "Australia",
+      "currency": "AUD"
+    },
+    {
+      "code": "BR",
+      "name": "Brazil",
+      "currency": "BRL"
+    },
+    {
+      "code": "AF",
+      "name": "Afghanistan",
+      "currency": "AFN"
+    },
+    {
+      "code": "AL",
+      "name": "Albania",
+      "currency": "ALL"
+    },
+    {
+      "code": "DZ",
+      "name": "Algeria",
+      "currency": "DZD"
+    },
+    {
+      "code": "AS",
+      "name": "American Samoa",
+      "currency": "USD"
+    },
+    {
+      "code": "AD",
+      "name": "Andorra",
+      "currency": "EUR"
+    },
+    {
+      "code": "AO",
+      "name": "Angola",
+      "currency": "AOA"
+    },
+    {
+      "code": "AI",
+      "name": "Anguilla",
+      "currency": "XCD"
+    },
+    {
+      "code": "AQ",
+      "name": "Antarctica",
+      "currency": "USD"
+    },
+    {
+      "code": "AG",
+      "name": "Antigua and Barbuda",
+      "currency": "XCD"
+    },
+    {
+      "code": "AR",
+      "name": "Argentina",
+      "currency": "ARS"
+    },
+    {
+      "code": "AM",
+      "name": "Armenia",
+      "currency": "AMD"
+    },
+    {
+      "code": "AW",
+      "name": "Aruba",
+      "currency": "AWG"
+    },
+    {
+      "code": "AT",
+      "name": "Austria",
+      "currency": "EUR"
+    },
+    {
+      "code": "AZ",
+      "name": "Azerbaijan",
+      "currency": "AZN"
+    },
+    {
+      "code": "BS",
+      "name": "Bahamas",
+      "currency": "BSD"
+    },
+    {
+      "code": "BH",
+      "name": "Bahrain",
+      "currency": "BHD"
+    },
+    {
+      "code": "BD",
+      "name": "Bangladesh",
+      "currency": "BDT"
+    },
+    {
+      "code": "BB",
+      "name": "Barbados",
+      "currency": "BBD"
+    },
+    {
+      "code": "BY",
+      "name": "Belarus",
+      "currency": "BYN"
+    },
+    {
+      "code": "BZ",
+      "name": "Belize",
+      "currency": "BZD"
+    },
+    {
+      "code": "BJ",
+      "name": "Benin",
+      "currency": "XOF"
+    },
+    {
+      "code": "BM",
+      "name": "Bermuda",
+      "currency": "BMD"
+    },
+    {
+      "code": "BT",
+      "name": "Bhutan",
+      "currency": "INR"
+    },
+    {
+      "code": "BO",
+      "name": "Bolivia, Plurinational State of",
+      "currency": "BOB"
+    },
+    {
+      "code": "BQ",
+      "name": "Bonaire, Sint Eustatius and Saba",
+      "currency": "USD"
+    },
+    {
+      "code": "BA",
+      "name": "Bosnia and Herzegovina",
+      "currency": "BAM"
+    },
+    {
+      "code": "BW",
+      "name": "Botswana",
+      "currency": "BWP"
+    },
+    {
+      "code": "BV",
+      "name": "Bouvet Island",
+      "currency": "NOK"
+    },
+    {
+      "code": "IO",
+      "name": "British Indian Ocean Territory",
+      "currency": "USD"
+    },
+    {
+      "code": "BN",
+      "name": "Brunei Darussalam",
+      "currency": "BND"
+    },
+    {
+      "code": "BG",
+      "name": "Bulgaria",
+      "currency": "BGN"
+    },
+    {
+      "code": "BF",
+      "name": "Burkina Faso",
+      "currency": "XOF"
+    },
+    {
+      "code": "BI",
+      "name": "Burundi",
+      "currency": "BIF"
+    },
+    {
+      "code": "CV",
+      "name": "Cabo Verde",
+      "currency": "CVE"
+    },
+    {
+      "code": "KH",
+      "name": "Cambodia",
+      "currency": "KHR"
+    },
+    {
+      "code": "CM",
+      "name": "Cameroon",
+      "currency": "XAF"
+    },
+    {
+      "code": "KY",
+      "name": "Cayman Islands",
+      "currency": "KYD"
+    },
+    {
+      "code": "CF",
+      "name": "Central African Republic",
+      "currency": "XAF"
+    },
+    {
+      "code": "TD",
+      "name": "Chad",
+      "currency": "XAF"
+    },
+    {
+      "code": "CL",
+      "name": "Chile",
+      "currency": "CLP"
+    },
+    {
+      "code": "CN",
+      "name": "China",
+      "currency": "CNY"
+    },
+    {
+      "code": "CX",
+      "name": "Christmas Island",
+      "currency": "AUD"
+    },
+    {
+      "code": "CC",
+      "name": "Cocos (Keeling) Islands",
+      "currency": "AUD"
+    },
+    {
+      "code": "CO",
+      "name": "Colombia",
+      "currency": "COP"
+    },
+    {
+      "code": "KM",
+      "name": "Comoros",
+      "currency": "KMF"
+    },
+    {
+      "code": "CG",
+      "name": "Congo",
+      "currency": "XAF"
+    },
+    {
+      "code": "CD",
+      "name": "Congo, The Democratic Republic of the",
+      "currency": "CDF"
+    },
+    {
+      "code": "CK",
+      "name": "Cook Islands",
+      "currency": "NZD"
+    },
+    {
+      "code": "CR",
+      "name": "Costa Rica",
+      "currency": "CRC"
+    },
+    {
+      "code": "HR",
+      "name": "Croatia",
+      "currency": "EUR"
+    },
+    {
+      "code": "CU",
+      "name": "Cuba",
+      "currency": "CUP"
+    },
+    {
+      "code": "CW",
+      "name": "Curaçao",
+      "currency": "XCG"
+    },
+    {
+      "code": "CY",
+      "name": "Cyprus",
+      "currency": "EUR"
+    },
+    {
+      "code": "CZ",
+      "name": "Czechia",
+      "currency": "CZK"
+    },
+    {
+      "code": "CI",
+      "name": "Côte d'Ivoire",
+      "currency": "XOF"
+    },
+    {
+      "code": "DK",
+      "name": "Denmark",
+      "currency": "DKK"
+    },
+    {
+      "code": "DJ",
+      "name": "Djibouti",
+      "currency": "DJF"
+    },
+    {
+      "code": "DM",
+      "name": "Dominica",
+      "currency": "XCD"
+    },
+    {
+      "code": "DO",
+      "name": "Dominican Republic",
+      "currency": "DOP"
+    },
+    {
+      "code": "EC",
+      "name": "Ecuador",
+      "currency": "USD"
+    },
+    {
+      "code": "EG",
+      "name": "Egypt",
+      "currency": "EGP"
+    },
+    {
+      "code": "SV",
+      "name": "El Salvador",
+      "currency": "USD"
+    },
+    {
+      "code": "GQ",
+      "name": "Equatorial Guinea",
+      "currency": "XAF"
+    },
+    {
+      "code": "ER",
+      "name": "Eritrea",
+      "currency": "ERN"
+    },
+    {
+      "code": "EE",
+      "name": "Estonia",
+      "currency": "EUR"
+    },
+    {
+      "code": "SZ",
+      "name": "Eswatini",
+      "currency": "SZL"
+    },
+    {
+      "code": "ET",
+      "name": "Ethiopia",
+      "currency": "ETB"
+    },
+    {
+      "code": "FK",
+      "name": "Falkland Islands (Malvinas)",
+      "currency": "FKP"
+    },
+    {
+      "code": "FO",
+      "name": "Faroe Islands",
+      "currency": "DKK"
+    },
+    {
+      "code": "FJ",
+      "name": "Fiji",
+      "currency": "FJD"
+    },
+    {
+      "code": "FI",
+      "name": "Finland",
+      "currency": "EUR"
+    },
+    {
+      "code": "GF",
+      "name": "French Guiana",
+      "currency": "EUR"
+    },
+    {
+      "code": "PF",
+      "name": "French Polynesia",
+      "currency": "XPF"
+    },
+    {
+      "code": "TF",
+      "name": "French Southern Territories",
+      "currency": "EUR"
+    },
+    {
+      "code": "GA",
+      "name": "Gabon",
+      "currency": "XAF"
+    },
+    {
+      "code": "GM",
+      "name": "Gambia",
+      "currency": "GMD"
+    },
+    {
+      "code": "GE",
+      "name": "Georgia",
+      "currency": "GEL"
+    },
+    {
+      "code": "GH",
+      "name": "Ghana",
+      "currency": "GHS"
+    },
+    {
+      "code": "GI",
+      "name": "Gibraltar",
+      "currency": "GIP"
+    },
+    {
+      "code": "GR",
+      "name": "Greece",
+      "currency": "EUR"
+    },
+    {
+      "code": "GL",
+      "name": "Greenland",
+      "currency": "DKK"
+    },
+    {
+      "code": "GD",
+      "name": "Grenada",
+      "currency": "XCD"
+    },
+    {
+      "code": "GP",
+      "name": "Guadeloupe",
+      "currency": "EUR"
+    },
+    {
+      "code": "GU",
+      "name": "Guam",
+      "currency": "USD"
+    },
+    {
+      "code": "GT",
+      "name": "Guatemala",
+      "currency": "GTQ"
+    },
+    {
+      "code": "GG",
+      "name": "Guernsey",
+      "currency": "GBP"
+    },
+    {
+      "code": "GN",
+      "name": "Guinea",
+      "currency": "GNF"
+    },
+    {
+      "code": "GW",
+      "name": "Guinea-Bissau",
+      "currency": "XOF"
+    },
+    {
+      "code": "GY",
+      "name": "Guyana",
+      "currency": "GYD"
+    },
+    {
+      "code": "HT",
+      "name": "Haiti",
+      "currency": "HTG"
+    },
+    {
+      "code": "HM",
+      "name": "Heard Island and McDonald Islands",
+      "currency": "AUD"
+    },
+    {
+      "code": "VA",
+      "name": "Holy See (Vatican City State)",
+      "currency": "EUR"
+    },
+    {
+      "code": "HN",
+      "name": "Honduras",
+      "currency": "HNL"
+    },
+    {
+      "code": "HK",
+      "name": "Hong Kong",
+      "currency": "HKD"
+    },
+    {
+      "code": "HU",
+      "name": "Hungary",
+      "currency": "HUF"
+    },
+    {
+      "code": "IS",
+      "name": "Iceland",
+      "currency": "ISK"
+    },
+    {
+      "code": "ID",
+      "name": "Indonesia",
+      "currency": "IDR"
+    },
+    {
+      "code": "IR",
+      "name": "Iran, Islamic Republic of",
+      "currency": "IRR"
+    },
+    {
+      "code": "IQ",
+      "name": "Iraq",
+      "currency": "IQD"
+    },
+    {
+      "code": "IE",
+      "name": "Ireland",
+      "currency": "EUR"
+    },
+    {
+      "code": "IM",
+      "name": "Isle of Man",
+      "currency": "GBP"
+    },
+    {
+      "code": "IL",
+      "name": "Israel",
+      "currency": "ILS"
+    },
+    {
+      "code": "JM",
+      "name": "Jamaica",
+      "currency": "JMD"
+    },
+    {
+      "code": "JE",
+      "name": "Jersey",
+      "currency": "GBP"
+    },
+    {
+      "code": "JO",
+      "name": "Jordan",
+      "currency": "JOD"
+    },
+    {
+      "code": "KZ",
+      "name": "Kazakhstan",
+      "currency": "KZT"
+    },
+    {
+      "code": "KE",
+      "name": "Kenya",
+      "currency": "KES"
+    },
+    {
+      "code": "KI",
+      "name": "Kiribati",
+      "currency": "AUD"
+    },
+    {
+      "code": "KP",
+      "name": "Korea, Democratic People's Republic of",
+      "currency": "KPW"
+    },
+    {
+      "code": "KR",
+      "name": "Korea, Republic of",
+      "currency": "KRW"
+    },
+    {
+      "code": "KW",
+      "name": "Kuwait",
+      "currency": "KWD"
+    },
+    {
+      "code": "KG",
+      "name": "Kyrgyzstan",
+      "currency": "KGS"
+    },
+    {
+      "code": "LA",
+      "name": "Lao People's Democratic Republic",
+      "currency": "LAK"
+    },
+    {
+      "code": "LV",
+      "name": "Latvia",
+      "currency": "EUR"
+    },
+    {
+      "code": "LB",
+      "name": "Lebanon",
+      "currency": "LBP"
+    },
+    {
+      "code": "LS",
+      "name": "Lesotho",
+      "currency": "ZAR"
+    },
+    {
+      "code": "LR",
+      "name": "Liberia",
+      "currency": "LRD"
+    },
+    {
+      "code": "LY",
+      "name": "Libya",
+      "currency": "LYD"
+    },
+    {
+      "code": "LI",
+      "name": "Liechtenstein",
+      "currency": "CHF"
+    },
+    {
+      "code": "LT",
+      "name": "Lithuania",
+      "currency": "EUR"
+    },
+    {
+      "code": "LU",
+      "name": "Luxembourg",
+      "currency": "EUR"
+    },
+    {
+      "code": "MO",
+      "name": "Macao",
+      "currency": "MOP"
+    },
+    {
+      "code": "MG",
+      "name": "Madagascar",
+      "currency": "MGA"
+    },
+    {
+      "code": "MW",
+      "name": "Malawi",
+      "currency": "MWK"
+    },
+    {
+      "code": "MY",
+      "name": "Malaysia",
+      "currency": "MYR"
+    },
+    {
+      "code": "MV",
+      "name": "Maldives",
+      "currency": "MVR"
+    },
+    {
+      "code": "ML",
+      "name": "Mali",
+      "currency": "XOF"
+    },
+    {
+      "code": "MT",
+      "name": "Malta",
+      "currency": "EUR"
+    },
+    {
+      "code": "MH",
+      "name": "Marshall Islands",
+      "currency": "USD"
+    },
+    {
+      "code": "MQ",
+      "name": "Martinique",
+      "currency": "EUR"
+    },
+    {
+      "code": "MR",
+      "name": "Mauritania",
+      "currency": "MRU"
+    },
+    {
+      "code": "MU",
+      "name": "Mauritius",
+      "currency": "MUR"
+    },
+    {
+      "code": "YT",
+      "name": "Mayotte",
+      "currency": "EUR"
+    },
+    {
+      "code": "MX",
+      "name": "Mexico",
+      "currency": "MXN"
+    },
+    {
+      "code": "FM",
+      "name": "Micronesia, Federated States of",
+      "currency": "USD"
+    },
+    {
+      "code": "MD",
+      "name": "Moldova, Republic of",
+      "currency": "MDL"
+    },
+    {
+      "code": "MC",
+      "name": "Monaco",
+      "currency": "EUR"
+    },
+    {
+      "code": "MN",
+      "name": "Mongolia",
+      "currency": "MNT"
+    },
+    {
+      "code": "ME",
+      "name": "Montenegro",
+      "currency": "EUR"
+    },
+    {
+      "code": "MS",
+      "name": "Montserrat",
+      "currency": "XCD"
+    },
+    {
+      "code": "MZ",
+      "name": "Mozambique",
+      "currency": "MZN"
+    },
+    {
+      "code": "MM",
+      "name": "Myanmar",
+      "currency": "MMK"
+    },
+    {
+      "code": "NA",
+      "name": "Namibia",
+      "currency": "ZAR"
+    },
+    {
+      "code": "NR",
+      "name": "Nauru",
+      "currency": "AUD"
+    },
+    {
+      "code": "NP",
+      "name": "Nepal",
+      "currency": "NPR"
+    },
+    {
+      "code": "NC",
+      "name": "New Caledonia",
+      "currency": "XPF"
+    },
+    {
+      "code": "NZ",
+      "name": "New Zealand",
+      "currency": "NZD"
+    },
+    {
+      "code": "NI",
+      "name": "Nicaragua",
+      "currency": "NIO"
+    },
+    {
+      "code": "NE",
+      "name": "Niger",
+      "currency": "XOF"
+    },
+    {
+      "code": "NG",
+      "name": "Nigeria",
+      "currency": "NGN"
+    },
+    {
+      "code": "NU",
+      "name": "Niue",
+      "currency": "NZD"
+    },
+    {
+      "code": "NF",
+      "name": "Norfolk Island",
+      "currency": "AUD"
+    },
+    {
+      "code": "MK",
+      "name": "North Macedonia",
+      "currency": "MKD"
+    },
+    {
+      "code": "MP",
+      "name": "Northern Mariana Islands",
+      "currency": "USD"
+    },
+    {
+      "code": "NO",
+      "name": "Norway",
+      "currency": "NOK"
+    },
+    {
+      "code": "OM",
+      "name": "Oman",
+      "currency": "OMR"
+    },
+    {
+      "code": "PK",
+      "name": "Pakistan",
+      "currency": "PKR"
+    },
+    {
+      "code": "PW",
+      "name": "Palau",
+      "currency": "USD"
+    },
+    {
+      "code": "PS",
+      "name": "Palestine, State of",
+      "currency": "ILS"
+    },
+    {
+      "code": "PA",
+      "name": "Panama",
+      "currency": "PAB"
+    },
+    {
+      "code": "PG",
+      "name": "Papua New Guinea",
+      "currency": "PGK"
+    },
+    {
+      "code": "PY",
+      "name": "Paraguay",
+      "currency": "PYG"
+    },
+    {
+      "code": "PE",
+      "name": "Peru",
+      "currency": "PEN"
+    },
+    {
+      "code": "PH",
+      "name": "Philippines",
+      "currency": "PHP"
+    },
+    {
+      "code": "PN",
+      "name": "Pitcairn",
+      "currency": "NZD"
+    },
+    {
+      "code": "PR",
+      "name": "Puerto Rico",
+      "currency": "USD"
+    },
+    {
+      "code": "QA",
+      "name": "Qatar",
+      "currency": "QAR"
+    },
+    {
+      "code": "RO",
+      "name": "Romania",
+      "currency": "RON"
+    },
+    {
+      "code": "RU",
+      "name": "Russian Federation",
+      "currency": "RUB"
+    },
+    {
+      "code": "RW",
+      "name": "Rwanda",
+      "currency": "RWF"
+    },
+    {
+      "code": "RE",
+      "name": "Réunion",
+      "currency": "EUR"
+    },
+    {
+      "code": "BL",
+      "name": "Saint Barthélemy",
+      "currency": "EUR"
+    },
+    {
+      "code": "SH",
+      "name": "Saint Helena, Ascension and Tristan da Cunha",
+      "currency": "SHP"
+    },
+    {
+      "code": "KN",
+      "name": "Saint Kitts and Nevis",
+      "currency": "XCD"
+    },
+    {
+      "code": "LC",
+      "name": "Saint Lucia",
+      "currency": "XCD"
+    },
+    {
+      "code": "MF",
+      "name": "Saint Martin (French part)",
+      "currency": "EUR"
+    },
+    {
+      "code": "PM",
+      "name": "Saint Pierre and Miquelon",
+      "currency": "EUR"
+    },
+    {
+      "code": "VC",
+      "name": "Saint Vincent and the Grenadines",
+      "currency": "XCD"
+    },
+    {
+      "code": "WS",
+      "name": "Samoa",
+      "currency": "WST"
+    },
+    {
+      "code": "SM",
+      "name": "San Marino",
+      "currency": "EUR"
+    },
+    {
+      "code": "ST",
+      "name": "Sao Tome and Principe",
+      "currency": "STN"
+    },
+    {
+      "code": "SN",
+      "name": "Senegal",
+      "currency": "XOF"
+    },
+    {
+      "code": "RS",
+      "name": "Serbia",
+      "currency": "RSD"
+    },
+    {
+      "code": "SC",
+      "name": "Seychelles",
+      "currency": "SCR"
+    },
+    {
+      "code": "SL",
+      "name": "Sierra Leone",
+      "currency": "SLE"
+    },
+    {
+      "code": "SG",
+      "name": "Singapore",
+      "currency": "SGD"
+    },
+    {
+      "code": "SX",
+      "name": "Sint Maarten (Dutch part)",
+      "currency": "XCG"
+    },
+    {
+      "code": "SK",
+      "name": "Slovakia",
+      "currency": "EUR"
+    },
+    {
+      "code": "SI",
+      "name": "Slovenia",
+      "currency": "EUR"
+    },
+    {
+      "code": "SB",
+      "name": "Solomon Islands",
+      "currency": "SBD"
+    },
+    {
+      "code": "SO",
+      "name": "Somalia",
+      "currency": "SOS"
+    },
+    {
+      "code": "ZA",
+      "name": "South Africa",
+      "currency": "ZAR"
+    },
+    {
+      "code": "GS",
+      "name": "South Georgia and the South Sandwich Islands",
+      "currency": "GBP"
+    },
+    {
+      "code": "SS",
+      "name": "South Sudan",
+      "currency": "SSP"
+    },
+    {
+      "code": "LK",
+      "name": "Sri Lanka",
+      "currency": "LKR"
+    },
+    {
+      "code": "SD",
+      "name": "Sudan",
+      "currency": "SDG"
+    },
+    {
+      "code": "SR",
+      "name": "Suriname",
+      "currency": "SRD"
+    },
+    {
+      "code": "SJ",
+      "name": "Svalbard and Jan Mayen",
+      "currency": "NOK"
+    },
+    {
+      "code": "SE",
+      "name": "Sweden",
+      "currency": "SEK"
+    },
+    {
+      "code": "CH",
+      "name": "Switzerland",
+      "currency": "CHF"
+    },
+    {
+      "code": "SY",
+      "name": "Syrian Arab Republic",
+      "currency": "SYP"
+    },
+    {
+      "code": "TW",
+      "name": "Taiwan, Province of China",
+      "currency": "TWD"
+    },
+    {
+      "code": "TJ",
+      "name": "Tajikistan",
+      "currency": "TJS"
+    },
+    {
+      "code": "TZ",
+      "name": "Tanzania, United Republic of",
+      "currency": "TZS"
+    },
+    {
+      "code": "TH",
+      "name": "Thailand",
+      "currency": "THB"
+    },
+    {
+      "code": "TL",
+      "name": "Timor-Leste",
+      "currency": "USD"
+    },
+    {
+      "code": "TG",
+      "name": "Togo",
+      "currency": "XOF"
+    },
+    {
+      "code": "TK",
+      "name": "Tokelau",
+      "currency": "NZD"
+    },
+    {
+      "code": "TO",
+      "name": "Tonga",
+      "currency": "TOP"
+    },
+    {
+      "code": "TT",
+      "name": "Trinidad and Tobago",
+      "currency": "TTD"
+    },
+    {
+      "code": "TN",
+      "name": "Tunisia",
+      "currency": "TND"
+    },
+    {
+      "code": "TM",
+      "name": "Turkmenistan",
+      "currency": "TMT"
+    },
+    {
+      "code": "TC",
+      "name": "Turks and Caicos Islands",
+      "currency": "USD"
+    },
+    {
+      "code": "TV",
+      "name": "Tuvalu",
+      "currency": "AUD"
+    },
+    {
+      "code": "UG",
+      "name": "Uganda",
+      "currency": "UGX"
+    },
+    {
+      "code": "UA",
+      "name": "Ukraine",
+      "currency": "UAH"
+    },
+    {
+      "code": "UM",
+      "name": "United States Minor Outlying Islands",
+      "currency": "USD"
+    },
+    {
+      "code": "UY",
+      "name": "Uruguay",
+      "currency": "UYU"
+    },
+    {
+      "code": "UZ",
+      "name": "Uzbekistan",
+      "currency": "UZS"
+    },
+    {
+      "code": "VU",
+      "name": "Vanuatu",
+      "currency": "VUV"
+    },
+    {
+      "code": "VE",
+      "name": "Venezuela, Bolivarian Republic of",
+      "currency": "VES"
+    },
+    {
+      "code": "VN",
+      "name": "Viet Nam",
+      "currency": "VND"
+    },
+    {
+      "code": "VG",
+      "name": "Virgin Islands, British",
+      "currency": "USD"
+    },
+    {
+      "code": "VI",
+      "name": "Virgin Islands, U.S.",
+      "currency": "USD"
+    },
+    {
+      "code": "WF",
+      "name": "Wallis and Futuna",
+      "currency": "XPF"
+    },
+    {
+      "code": "EH",
+      "name": "Western Sahara",
+      "currency": "MAD"
+    },
+    {
+      "code": "YE",
+      "name": "Yemen",
+      "currency": "YER"
+    },
+    {
+      "code": "ZM",
+      "name": "Zambia",
+      "currency": "ZMW"
+    },
+    {
+      "code": "ZW",
+      "name": "Zimbabwe",
+      "currency": "USD"
+    },
+    {
+      "code": "AX",
+      "name": "Åland Islands",
+      "currency": "EUR"
+    }
+  ],
+  "languages": [
+    {
+      "code": "en",
+      "name": "English",
+      "native": "English",
+      "dir": "ltr"
+    },
+    {
+      "code": "fr",
+      "name": "French",
+      "native": "Français",
+      "dir": "ltr"
+    },
+    {
+      "code": "es",
+      "name": "Spanish",
+      "native": "Español",
+      "dir": "ltr"
+    },
+    {
+      "code": "de",
+      "name": "German",
+      "native": "Deutsch",
+      "dir": "ltr"
+    },
+    {
+      "code": "it",
+      "name": "Italian",
+      "native": "Italiano",
+      "dir": "ltr"
+    },
+    {
+      "code": "pt",
+      "name": "Portuguese",
+      "native": "Português",
+      "dir": "ltr"
+    },
+    {
+      "code": "ar",
+      "name": "Arabic",
+      "native": "العربية",
+      "dir": "rtl"
+    },
+    {
+      "code": "tr",
+      "name": "Turkish",
+      "native": "Türkçe",
+      "dir": "ltr"
+    },
+    {
+      "code": "ru",
+      "name": "Russian",
+      "native": "Русский",
+      "dir": "ltr"
+    },
+    {
+      "code": "uk",
+      "name": "Ukrainian",
+      "native": "Українська",
+      "dir": "ltr"
+    },
+    {
+      "code": "pl",
+      "name": "Polish",
+      "native": "Polski",
+      "dir": "ltr"
+    },
+    {
+      "code": "nl",
+      "name": "Dutch",
+      "native": "Nederlands",
+      "dir": "ltr"
+    },
+    {
+      "code": "sv",
+      "name": "Swedish",
+      "native": "Svenska",
+      "dir": "ltr"
+    },
+    {
+      "code": "no",
+      "name": "Norwegian",
+      "native": "Norsk",
+      "dir": "ltr"
+    },
+    {
+      "code": "da",
+      "name": "Danish",
+      "native": "Dansk",
+      "dir": "ltr"
+    },
+    {
+      "code": "fi",
+      "name": "Finnish",
+      "native": "Suomi",
+      "dir": "ltr"
+    },
+    {
+      "code": "cs",
+      "name": "Czech",
+      "native": "Čeština",
+      "dir": "ltr"
+    },
+    {
+      "code": "el",
+      "name": "Greek",
+      "native": "Ελληνικά",
+      "dir": "ltr"
+    },
+    {
+      "code": "ro",
+      "name": "Romanian",
+      "native": "Română",
+      "dir": "ltr"
+    },
+    {
+      "code": "hu",
+      "name": "Hungarian",
+      "native": "Magyar",
+      "dir": "ltr"
+    },
+    {
+      "code": "id",
+      "name": "Indonesian",
+      "native": "Bahasa Indonesia",
+      "dir": "ltr"
+    },
+    {
+      "code": "ms",
+      "name": "Malay",
+      "native": "Bahasa Melayu",
+      "dir": "ltr"
+    },
+    {
+      "code": "vi",
+      "name": "Vietnamese",
+      "native": "Tiếng Việt",
+      "dir": "ltr"
+    },
+    {
+      "code": "th",
+      "name": "Thai",
+      "native": "ไทย",
+      "dir": "ltr"
+    },
+    {
+      "code": "hi",
+      "name": "Hindi",
+      "native": "हिन्दी",
+      "dir": "ltr"
+    },
+    {
+      "code": "bn",
+      "name": "Bengali",
+      "native": "বাংলা",
+      "dir": "ltr"
+    },
+    {
+      "code": "ur",
+      "name": "Urdu",
+      "native": "اردو",
+      "dir": "rtl"
+    },
+    {
+      "code": "fa",
+      "name": "Persian",
+      "native": "فارسی",
+      "dir": "rtl"
+    },
+    {
+      "code": "he",
+      "name": "Hebrew",
+      "native": "עברית",
+      "dir": "rtl"
+    },
+    {
+      "code": "ja",
+      "name": "Japanese",
+      "native": "日本語",
+      "dir": "ltr"
+    },
+    {
+      "code": "ko",
+      "name": "Korean",
+      "native": "한국어",
+      "dir": "ltr"
+    },
+    {
+      "code": "zh",
+      "name": "Chinese",
+      "native": "中文",
+      "dir": "ltr"
+    },
+    {
+      "code": "fil",
+      "name": "Filipino",
+      "native": "Filipino",
+      "dir": "ltr"
+    },
+    {
+      "code": "sw",
+      "name": "Swahili",
+      "native": "Kiswahili",
+      "dir": "ltr"
+    }
+  ],
+  "games": [
+    "Fortnite",
+    "Warzone",
+    "GTA V",
+    "Minecraft",
+    "Valorant",
+    "FC",
+    "Cyberpunk 2077",
+    "Apex Legends",
+    "Counter-Strike 2",
+    "Overwatch 2"
+  ],
+  "products": [
+    {
+      "id": "cpu-7600",
+      "device": "desktop",
+      "category": "cpu",
+      "name": "AMD Ryzen 5 7600",
+      "brand": "AMD",
+      "usd_price": 189,
+      "performance": 82,
+      "value": 94,
+      "gaming": 95,
+      "streaming": 82,
+      "creation": 76,
+      "quiet": 84,
+      "compact": 92,
+      "wifi": 0,
+      "upgrade_score": 92,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Minecraft",
+        "Valorant",
+        "FC"
+      ],
+      "why": "Excellent gaming value on AM5 with a strong upgrade path.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 189,
+          "base_url": "https://www.amazon.com/s?k=AMD+Ryzen+5+7600",
+          "countries": [
+            "*"
+          ]
+        },
+        {
+          "name": "Newegg",
+          "usd_price": 194,
+          "base_url": "https://www.newegg.com/p/pl?d=AMD+Ryzen+5+7600",
+          "countries": [
+            "US"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpu-7800x3d",
+      "device": "desktop",
+      "category": "cpu",
+      "name": "AMD Ryzen 7 7800X3D",
+      "brand": "AMD",
+      "usd_price": 329,
+      "performance": 97,
+      "value": 84,
+      "gaming": 99,
+      "streaming": 92,
+      "creation": 86,
+      "quiet": 80,
+      "compact": 78,
+      "wifi": 0,
+      "upgrade_score": 88,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Cyberpunk 2077",
+        "Apex Legends",
+        "Counter-Strike 2"
+      ],
+      "why": "Top-tier gaming CPU that makes sense for high-refresh builds.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 329,
+          "base_url": "https://www.amazon.com/s?k=Ryzen+7+7800X3D",
+          "countries": [
+            "*"
+          ]
+        },
+        {
+          "name": "Newegg",
+          "usd_price": 339,
+          "base_url": "https://www.newegg.com/p/pl?d=Ryzen+7+7800X3D",
+          "countries": [
+            "US"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gpu-7800xt",
+      "device": "desktop",
+      "category": "gpu",
+      "name": "Radeon RX 7800 XT 16GB",
+      "brand": "AMD",
+      "usd_price": 489,
+      "performance": 94,
+      "value": 92,
+      "gaming": 96,
+      "streaming": 83,
+      "creation": 88,
+      "quiet": 80,
+      "compact": 70,
+      "wifi": 0,
+      "upgrade_score": 89,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Cyberpunk 2077",
+        "Apex Legends"
+      ],
+      "why": "16GB VRAM and strong 1440p value.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 489,
+          "base_url": "https://www.amazon.com/s?k=RX+7800+XT+16GB",
+          "countries": [
+            "*"
+          ]
+        },
+        {
+          "name": "Newegg",
+          "usd_price": 499,
+          "base_url": "https://www.newegg.com/p/pl?d=RX+7800+XT",
+          "countries": [
+            "US"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gpu-4070s",
+      "device": "desktop",
+      "category": "gpu",
+      "name": "GeForce RTX 4070 SUPER 12GB",
+      "brand": "NVIDIA",
+      "usd_price": 599,
+      "performance": 96,
+      "value": 85,
+      "gaming": 96,
+      "streaming": 96,
+      "creation": 95,
+      "quiet": 86,
+      "compact": 78,
+      "wifi": 0,
+      "upgrade_score": 87,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Cyberpunk 2077",
+        "Apex Legends"
+      ],
+      "why": "Strong 1440p performance with excellent streaming/creation features.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 599,
+          "base_url": "https://www.amazon.com/s?k=RTX+4070+SUPER",
+          "countries": [
+            "*"
+          ]
+        },
+        {
+          "name": "Newegg",
+          "usd_price": 609,
+          "base_url": "https://www.newegg.com/p/pl?d=RTX+4070+SUPER",
+          "countries": [
+            "US"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ram-32",
+      "device": "desktop",
+      "category": "ram",
+      "name": "32GB DDR5-6000 Kit",
+      "brand": "ValueKit",
+      "usd_price": 79,
+      "performance": 84,
+      "value": 96,
+      "gaming": 94,
+      "streaming": 92,
+      "creation": 94,
+      "quiet": 100,
+      "compact": 96,
+      "wifi": 0,
+      "upgrade_score": 86,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Minecraft",
+        "Valorant",
+        "FC"
+      ],
+      "why": "32GB keeps modern gaming and multitasking comfortable.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 79,
+          "base_url": "https://www.amazon.com/s?k=32GB+DDR5+6000",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ssd-1tb",
+      "device": "desktop",
+      "category": "ssd",
+      "name": "1TB NVMe Gen4 SSD",
+      "brand": "ValueDrive",
+      "usd_price": 59,
+      "performance": 82,
+      "value": 97,
+      "gaming": 90,
+      "streaming": 85,
+      "creation": 90,
+      "quiet": 100,
+      "compact": 100,
+      "wifi": 0,
+      "upgrade_score": 78,
+      "games": [],
+      "why": "Fast storage without blowing the budget.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 59,
+          "base_url": "https://www.amazon.com/s?k=1TB+NVMe+Gen4",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b650",
+      "device": "desktop",
+      "category": "motherboard",
+      "name": "B650 Wi-Fi Motherboard",
+      "brand": "BoardWorks",
+      "usd_price": 139,
+      "performance": 82,
+      "value": 91,
+      "gaming": 84,
+      "streaming": 80,
+      "creation": 80,
+      "quiet": 94,
+      "compact": 80,
+      "wifi": 100,
+      "upgrade_score": 94,
+      "games": [],
+      "why": "Solid AM5 foundation with Wi-Fi and upgrade headroom.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 139,
+          "base_url": "https://www.amazon.com/s?k=B650+WiFi+motherboard",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "psu-650",
+      "device": "desktop",
+      "category": "psu",
+      "name": "650W 80+ Gold PSU",
+      "brand": "PowerCore",
+      "usd_price": 79,
+      "performance": 84,
+      "value": 93,
+      "gaming": 86,
+      "streaming": 82,
+      "creation": 82,
+      "quiet": 88,
+      "compact": 84,
+      "wifi": 0,
+      "upgrade_score": 87,
+      "games": [],
+      "why": "Reliable power headroom for a midrange gaming build.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 79,
+          "base_url": "https://www.amazon.com/s?k=650W+80+Gold+PSU",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "case-air",
+      "device": "desktop",
+      "category": "case",
+      "name": "Airflow Mid-Tower Case",
+      "brand": "OpenFrame",
+      "usd_price": 69,
+      "performance": 75,
+      "value": 94,
+      "gaming": 84,
+      "streaming": 78,
+      "creation": 78,
+      "quiet": 78,
+      "compact": 82,
+      "wifi": 0,
+      "upgrade_score": 88,
+      "games": [],
+      "why": "Good airflow and sensible cable space.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 69,
+          "base_url": "https://www.amazon.com/s?k=airflow+mid+tower+case",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laptop-acer",
+      "device": "laptop",
+      "category": "laptop",
+      "name": "15.6-in Gaming Laptop • RTX 4060 • 16GB",
+      "brand": "ExampleBook",
+      "usd_price": 899,
+      "performance": 86,
+      "value": 90,
+      "gaming": 92,
+      "streaming": 83,
+      "creation": 84,
+      "quiet": 62,
+      "compact": 95,
+      "wifi": 100,
+      "upgrade_score": 67,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Valorant",
+        "FC"
+      ],
+      "why": "Balanced 1080p/1440p-class gaming laptop for buyers who need portability.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 899,
+          "base_url": "https://www.amazon.com/s?k=gaming+laptop+RTX+4060+16GB",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laptop-lenovo",
+      "device": "laptop",
+      "category": "laptop",
+      "name": "16-in Gaming Laptop • RTX 4070 • 32GB",
+      "brand": "ExampleLegion",
+      "usd_price": 1299,
+      "performance": 94,
+      "value": 84,
+      "gaming": 96,
+      "streaming": 92,
+      "creation": 91,
+      "quiet": 60,
+      "compact": 92,
+      "wifi": 100,
+      "upgrade_score": 71,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Cyberpunk 2077",
+        "Apex Legends"
+      ],
+      "why": "Higher-end portable performance for users who want strong headroom away from a desk.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 1299,
+          "base_url": "https://www.amazon.com/s?k=gaming+laptop+RTX+4070+32GB",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cpu-5500",
+      "device": "desktop",
+      "category": "cpu",
+      "name": "AMD Ryzen 5 5500",
+      "brand": "AMD",
+      "usd_price": 89,
+      "performance": 72,
+      "value": 96,
+      "gaming": 88,
+      "streaming": 72,
+      "creation": 68,
+      "quiet": 84,
+      "compact": 94,
+      "wifi": 0,
+      "upgrade_score": 67,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Minecraft",
+        "Valorant",
+        "FC"
+      ],
+      "why": "Low-cost gaming CPU that leaves more budget for the GPU.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 89,
+          "base_url": "https://www.amazon.com/s?k=Ryzen+5+5500",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gpu-6600",
+      "device": "desktop",
+      "category": "gpu",
+      "name": "Radeon RX 6600 8GB",
+      "brand": "AMD",
+      "usd_price": 199,
+      "performance": 73,
+      "value": 96,
+      "gaming": 89,
+      "streaming": 72,
+      "creation": 68,
+      "quiet": 84,
+      "compact": 88,
+      "wifi": 0,
+      "upgrade_score": 67,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Minecraft",
+        "Valorant",
+        "FC"
+      ],
+      "why": "Excellent 1080p value and a sensible match for tighter budgets.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 199,
+          "base_url": "https://www.amazon.com/s?k=RX+6600",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gpu-7600xt",
+      "device": "desktop",
+      "category": "gpu",
+      "name": "Radeon RX 7600 XT 16GB",
+      "brand": "AMD",
+      "usd_price": 329,
+      "performance": 84,
+      "value": 91,
+      "gaming": 92,
+      "streaming": 78,
+      "creation": 78,
+      "quiet": 80,
+      "compact": 82,
+      "wifi": 0,
+      "upgrade_score": 79,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Cyberpunk 2077",
+        "Apex Legends"
+      ],
+      "why": "16GB VRAM adds breathing room without jumping to high-end pricing.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 329,
+          "base_url": "https://www.amazon.com/s?k=RX+7600+XT+16GB",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ram-16",
+      "device": "desktop",
+      "category": "ram",
+      "name": "16GB DDR4-3200 Kit",
+      "brand": "ValueKit",
+      "usd_price": 39,
+      "performance": 68,
+      "value": 99,
+      "gaming": 84,
+      "streaming": 70,
+      "creation": 70,
+      "quiet": 100,
+      "compact": 100,
+      "wifi": 0,
+      "upgrade_score": 62,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Minecraft",
+        "Valorant",
+        "FC"
+      ],
+      "why": "Affordable baseline for a budget gaming build.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 39,
+          "base_url": "https://www.amazon.com/s?k=16GB+DDR4+3200",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "a520",
+      "device": "desktop",
+      "category": "motherboard",
+      "name": "A520 Motherboard",
+      "brand": "BoardWorks",
+      "usd_price": 59,
+      "performance": 68,
+      "value": 96,
+      "gaming": 72,
+      "streaming": 65,
+      "creation": 64,
+      "quiet": 92,
+      "compact": 88,
+      "wifi": 0,
+      "upgrade_score": 55,
+      "games": [],
+      "why": "Budget-friendly board that keeps the build focused on performance-critical parts.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 59,
+          "base_url": "https://www.amazon.com/s?k=A520+motherboard",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b550",
+      "device": "desktop",
+      "category": "motherboard",
+      "name": "B550 Wi-Fi Motherboard",
+      "brand": "BoardWorks",
+      "usd_price": 99,
+      "performance": 78,
+      "value": 93,
+      "gaming": 82,
+      "streaming": 76,
+      "creation": 74,
+      "quiet": 92,
+      "compact": 82,
+      "wifi": 100,
+      "upgrade_score": 74,
+      "games": [],
+      "why": "A cost-conscious step up with Wi-Fi and good AM4 flexibility.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 99,
+          "base_url": "https://www.amazon.com/s?k=B550+WiFi+motherboard",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "psu-500",
+      "device": "desktop",
+      "category": "psu",
+      "name": "500W 80+ Bronze PSU",
+      "brand": "PowerCore",
+      "usd_price": 49,
+      "performance": 72,
+      "value": 95,
+      "gaming": 74,
+      "streaming": 70,
+      "creation": 70,
+      "quiet": 78,
+      "compact": 86,
+      "wifi": 0,
+      "upgrade_score": 55,
+      "games": [],
+      "why": "Budget-safe power for entry-level builds.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 49,
+          "base_url": "https://www.amazon.com/s?k=500W+80+Bronze+PSU",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "case-budget",
+      "device": "desktop",
+      "category": "case",
+      "name": "Compact Airflow Case",
+      "brand": "OpenFrame",
+      "usd_price": 49,
+      "performance": 68,
+      "value": 96,
+      "gaming": 76,
+      "streaming": 70,
+      "creation": 70,
+      "quiet": 74,
+      "compact": 95,
+      "wifi": 0,
+      "upgrade_score": 70,
+      "games": [],
+      "why": "Low-cost airflow case that leaves room for the GPU.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 49,
+          "base_url": "https://www.amazon.com/s?k=compact+airflow+pc+case",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prebuilt-800",
+      "device": "prebuilt",
+      "category": "prebuilt",
+      "name": "Example ReadyBuild • 1080p Gaming • 16GB",
+      "brand": "ExampleBuild",
+      "usd_price": 799,
+      "performance": 77,
+      "value": 87,
+      "gaming": 86,
+      "streaming": 70,
+      "creation": 65,
+      "quiet": 70,
+      "compact": 82,
+      "wifi": 100,
+      "upgrade_score": 65,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Minecraft",
+        "Valorant",
+        "FC"
+      ],
+      "why": "A ready-to-use reference option for buyers who do not want to assemble parts.",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 799,
+          "base_url": "https://www.amazon.com/s?k=gaming+pc+16GB",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "used-650",
+      "device": "used",
+      "category": "used",
+      "name": "Example Used Gaming Desktop • Verified Listing",
+      "brand": "Marketplace Example",
+      "usd_price": 649,
+      "performance": 78,
+      "value": 94,
+      "gaming": 88,
+      "streaming": 70,
+      "creation": 66,
+      "quiet": 65,
+      "compact": 78,
+      "wifi": 80,
+      "upgrade_score": 61,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Minecraft",
+        "Valorant",
+        "FC"
+      ],
+      "why": "A reference used-market option; real launch should verify seller, condition and warranty data.",
+      "stores": [
+        {
+          "name": "Marketplace",
+          "usd_price": 649,
+          "base_url": "https://www.ebay.com/sch/i.html?_nkw=gaming+pc",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    }
+  ]
+}
