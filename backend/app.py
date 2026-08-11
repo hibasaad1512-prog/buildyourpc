@@ -920,6 +920,91 @@ def recommend_build(payload: dict[str, Any]) -> dict[str, Any]:
     raise ValueError("Unsupported device type. Choose desktop, laptop, prebuilt, or used.")
 
 
+
+def enrich_result_features(result: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    """Guarantee the enhanced result panels always have data.
+
+    The UI should never silently disappear just because a live provider is not configured
+    or the recommendation is a laptop/prebuilt/used result.
+    """
+    parts = result.get("parts") or []
+    offers = [o for p in parts for o in (p.get("offers") or []) if isinstance(o, dict)]
+    live_count = sum(1 for o in offers if o.get("live"))
+    stores = {str(o.get("store")) for o in offers if o.get("store")}
+    currency = str(result.get("currency") or payload.get("currency") or "USD").upper()
+
+    if not result.get("build_score"):
+        perf = int(result.get("performance_fit") or result.get("value_score") or 0)
+        value = int(result.get("value_score") or perf or 0)
+        future = int(result.get("future_score") or round((value * .7) + (perf * .3)))
+        compat = 100
+        if result.get("type") == "desktop":
+            cpu = next((p for p in parts if p.get("category") == "cpu"), None)
+            board = next((p for p in parts if p.get("category") == "motherboard"), None)
+            ram = next((p for p in parts if p.get("category") == "ram"), None)
+            gpu = next((p for p in parts if p.get("category") == "gpu"), None)
+            psu = next((p for p in parts if p.get("category") == "psu"), None)
+            if cpu and board and cpu.get("specs", {}).get("socket") and board.get("specs", {}).get("socket") and cpu["specs"]["socket"] != board["specs"]["socket"]:
+                compat -= 50
+            if ram and board and ram.get("specs", {}).get("memory_type") and board.get("specs", {}).get("memory_type") and ram["specs"]["memory_type"] != board["specs"]["memory_type"]:
+                compat -= 40
+            if gpu and psu:
+                req = float(gpu.get("specs", {}).get("recommended_psu_w") or 0)
+                have = float(psu.get("specs", {}).get("wattage") or 0)
+                if req and have < req: compat -= 40
+        budget = float(payload.get("budget") or result.get("total") or 0)
+        total = float(result.get("total") or budget or 0)
+        budget_fit = 100 if not budget or total <= budget else max(0, round(100 - ((total-budget)/max(1,budget))*100))
+        overall = round(perf*.32 + value*.26 + compat*.27 + future*.10 + budget_fit*.05)
+        result["build_score"] = {
+            "overall": max(0, min(100, overall)), "performance": max(0, min(100, perf)),
+            "value": max(0, min(100, value)), "compatibility": max(0, min(100, compat)),
+            "upgradeability": max(0, min(100, future)), "budget_fit": max(0, min(100, budget_fit)),
+        }
+
+    if not result.get("price_hunt"):
+        result["price_hunt"] = {
+            "offers_count": len(offers),
+            "live_count": live_count,
+            "stores_count": len(stores),
+            "total": result.get("total"),
+            "mode": "live" if live_count else "search",
+        }
+
+    if not result.get("build_reasons"):
+        score = result["build_score"]
+        reasons = [
+            f"Compatibility score: {score['compatibility']}% based on the checks available for this product type.",
+            "The recommendation prioritizes your budget and selected goals instead of simply choosing the most expensive parts.",
+        ]
+        if live_count:
+            reasons.append(f"{live_count} live offer{'s' if live_count != 1 else ''} found across {len(stores)} store{'s' if len(stores) != 1 else ''}.")
+        else:
+            reasons.append("Live retailer feeds are not active for this market yet, so search links are shown instead of pretending a reference price is a live deal.")
+        result["build_reasons"] = reasons
+
+    if "cheaper_alternatives" not in result:
+        alternatives = []
+        current_total = float(result.get("total") or 0)
+        for p in parts:
+            # Nearby options for single-product results can act as the safe "save more" lane.
+            for alt in (result.get("nearby_options") or []):
+                if alt.get("price") is None or not alt.get("name"):
+                    continue
+                alt_price = float(alt.get("price") or 0)
+                if alt_price >= float(p.get("price") or 0):
+                    continue
+                alternatives.append({
+                    "category": p.get("category", "Option"), "id": alt.get("id"), "name": alt.get("name"),
+                    "price": alt_price, "currency": alt.get("currency", currency),
+                    "savings": round(float(p.get("price") or 0) - alt_price, 2),
+                    "why": "Lower-cost alternative shown separately so the main recommendation stays unchanged.",
+                })
+                break
+        result["cheaper_alternatives"] = alternatives[:4]
+
+    return result
+
 def event(name: str, *, build_id: str | None = None, product_id: str | None = None, country: str | None = None, meta: dict | None = None) -> None:
     try:
         con = db()
@@ -1133,6 +1218,9 @@ def recommend():
         # HTTP 500 for every non-desktop device (laptop/prebuilt/used).
         snapshot = {k: v for k, v in base.items() if k != "alternatives"}
         alternatives = [snapshot]
+    base = enrich_result_features(base, payload)
+    for i, alt in enumerate(alternatives):
+        alternatives[i] = enrich_result_features(alt, payload)
     base["alternatives"] = alternatives
     base["query"] = {
         "budget": budget, "currency": payload["currency"], "device_type": payload.get("device_type", "not_sure"),

@@ -486,16 +486,29 @@ function localizedResultTitle(r){if(r?.type==='laptop')return `${t('laptop')} �
 function renderEnhancementPanels(result){
   const score=result.build_score||{};
   const hunt=result.price_hunt||{};
+  const parts=result.parts||[];
   const bars=[['performance',score.performance],['compatibility',score.compatibility],['upgradeability',score.upgradeability],['budgetFit',score.budget_fit]].filter(([,v])=>Number.isFinite(Number(v)));
-  const scoreHtml=`<div class="enhance-grid">
-    <section class="enhance-card score-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('buildScore'))}</span><strong>${Number(score.overall||0)}/100</strong></div><span class="score-pill">${escapeHtml(t('overall'))}</span></div>
-      <div class="score-bars">${bars.map(([k,v])=>`<div class="score-row"><span>${escapeHtml(t(k))}</span><div class="score-track"><i style="width:${Math.max(0,Math.min(100,Number(v)))}%"></i></div><b>${Math.round(Number(v))}</b></div>`).join('')}</div></section>
-    <section class="enhance-card hunt-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('priceHunt'))}</span><strong>${hunt.live_count||0} ${escapeHtml(t('liveOffers'))}</strong></div><span class="hunt-meta">${hunt.stores_count||0} ${escapeHtml(t('stores'))}</span></div>
-      <div class="hunt-strip">${(result.parts||[]).slice(0,4).map(p=>{const offers=(p.offers||[]).filter(o=>o.url);const numeric=offers.filter(o=>o.price!=null).sort((a,b)=>Number(a.price)-Number(b.price));const best=numeric[0];return `<div class="hunt-mini"><span>${escapeHtml(p.category)}</span><strong>${best?fmtMoney(best.price,best.currency):fmtMoney(p.price,p.currency)}</strong><small>${best?escapeHtml(best.store):escapeHtml(t('reference'))}</small><button type="button" class="tiny-hunt" data-hunt-part="${escapeHtml(p.id)}">${escapeHtml(t('searchAllStores'))}</button></div>`}).join('')}</div></section>
+  const compat=Number(score.compatibility||0);
+  const verdict=compat>=90?'✓ Ready to build':compat>=75?'! Review notes':'⚠ Review compatibility';
+  const verdictClass=compat>=90?'good':compat>=75?'warn':'bad';
+  const allOffers=parts.flatMap(p=>p.offers||[]);
+  const searchCount=allOffers.filter(o=>o.url).length;
+  return `
+  <div class="feature-banner">
+    <div><span class="enhance-kicker">BUILD INTELLIGENCE</span><strong>We checked the build before showing it</strong><p>Compatibility, value, upgrades and shopping options — all in one place.</p></div>
+    <span class="compat-verdict ${verdictClass}">${escapeHtml(verdict)}</span>
   </div>
-  <div class="enhance-card why-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('whyBuild'))}</span><strong>${escapeHtml(result.title||t('smartBuy'))}</strong></div></div><div class="why-grid">${(result.build_reasons||result.reasons||[]).slice(0,3).map(x=>`<div class="why-item"><span>✓</span><p>${escapeHtml(x)}</p></div>`).join('')}</div></div>
-  ${(result.cheaper_alternatives||[]).length?`<div class="enhance-card savings-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('saveMoney'))}</span><strong>${escapeHtml(t('compatibleSwap'))}</strong></div></div><div class="swap-grid">${result.cheaper_alternatives.slice(0,4).map(a=>`<div class="swap-card"><span>${escapeHtml(a.category)}</span><strong>${escapeHtml(a.name)}</strong><div><b>${fmtMoney(a.price,a.currency)}</b><small>${escapeHtml(t('saves'))} ${fmtMoney(a.savings,a.currency)}</small></div><small>${escapeHtml(a.why||'')}</small></div>`).join('')}</div></div>`:''}`;
-  return scoreHtml;
+  <div class="enhance-grid">
+    <section class="enhance-card score-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('buildScore'))}</span><strong>${Number(score.overall||0)}/100</strong></div><span class="score-pill">${escapeHtml(t('overall'))}</span></div>
+      <div class="score-bars">${bars.map(([k,v])=>`<div class="score-row"><span>${escapeHtml(t(k))}</span><div class="score-track"><i style="width:${Math.max(0,Math.min(100,Number(v)))}%"></i></div><b>${Math.round(Number(v))}</b></div>`).join('')}</div>
+    </section>
+    <section class="enhance-card hunt-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('priceHunt'))}</span><strong>${hunt.live_count||0} ${escapeHtml(t('liveOffers'))}</strong></div><span class="hunt-meta">${hunt.stores_count||0} ${escapeHtml(t('stores'))}</span></div>
+      <div class="hunt-strip">${parts.slice(0,4).map(p=>{const offers=(p.offers||[]).filter(o=>o.url);const numeric=offers.filter(o=>o.price!=null).sort((a,b)=>Number(a.price)-Number(b.price));const best=numeric[0];return `<div class="hunt-mini"><span>${escapeHtml(p.category)}</span><strong>${best?fmtMoney(best.price,best.currency):fmtMoney(p.price,p.currency)}</strong><small>${best?escapeHtml(best.store):escapeHtml(t('reference'))}</small><button type="button" class="tiny-hunt" data-hunt-part="${escapeHtml(p.id)}">${escapeHtml(t('searchAllStores'))}</button></div>`}).join('')}</div>
+    </section>
+  </div>
+  <div class="enhance-card why-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('whyBuild'))}</span><strong>${escapeHtml(result.title||t('smartBuy'))}</strong></div><span class="hunt-meta">${parts.length} parts checked</span></div><div class="why-grid">${(result.build_reasons||result.reasons||[]).slice(0,4).map(x=>`<div class="why-item"><span>✓</span><p>${escapeHtml(x)}</p></div>`).join('')}</div></div>
+  <div class="enhance-card shopping-card"><div class="enhance-head"><div><span class="enhance-kicker">SMART SHOPPING</span><strong>Find where to buy each part</strong></div><span class="hunt-meta">${searchCount} links ready</span></div><div class="shopping-actions"><button type="button" class="primary-shop-btn" id="huntAllParts">${escapeHtml(t('searchAllStores'))}</button><span>Reference prices stay labeled when live retailer data is unavailable.</span></div></div>
+  <div class="enhance-card savings-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('saveMoney'))}</span><strong>${escapeHtml(t('compatibleSwap'))}</strong></div></div>${(result.cheaper_alternatives||[]).length?`<div class="swap-grid">${result.cheaper_alternatives.slice(0,4).map(a=>`<div class="swap-card"><span>${escapeHtml(a.category)}</span><strong>${escapeHtml(a.name)}</strong><div><b>${fmtMoney(a.price,a.currency)}</b><small>${escapeHtml(t('saves'))} ${fmtMoney(a.savings,a.currency)}</small></div><small>${escapeHtml(a.why||'')}</small></div>`).join('')}</div>`:`<div class="no-swap">No safe lower-cost swap beats the current recommendation right now. Keeping the original build protects your target.</div>`}</div>`;
 }
 
 function bindHuntButtons(result){
@@ -506,6 +519,17 @@ function bindHuntButtons(result){
     overlay.innerHTML=`<div class="hunt-modal"><div class="hunt-modal-head"><div><span class="enhance-kicker">${escapeHtml(t('priceHunt'))}</span><h4>${escapeHtml(part.name)}</h4></div><button class="hunt-close" type="button">×</button></div><div class="hunt-offer-list">${offers.map(o=>`<a class="hunt-offer-row" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span><i class="offer-dot ${o.live?'on':''}"></i><strong>${escapeHtml(o.store)}</strong><small>${escapeHtml(o.live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference'))}</small></span><b>${o.price==null?'↗':fmtMoney(o.price,o.currency)+' →'}</b></a>`).join('')}</div></div>`;
     document.body.appendChild(overlay); const close=()=>overlay.remove(); overlay.onclick=e=>{if(e.target===overlay)close()}; overlay.querySelector('.hunt-close').onclick=close;
   });
+}
+
+
+function bindShoppingButton(result){
+  const b=el('huntAllParts');
+  if(!b) return;
+  b.onclick=()=>{
+    const urls=(result.parts||[]).flatMap(p=>(p.offers||[]).filter(o=>o.url).map(o=>o.url));
+    if(urls.length) urls.slice(0,8).forEach((u,i)=>setTimeout(()=>window.open(u,'_blank','noopener,noreferrer'),i*90));
+    else toast('No store search links are available for this build yet.');
+  };
 }
 
 function renderResults(){
@@ -533,7 +557,7 @@ function renderResultPreset(result){
       <div class="build-footer"><div><span class="muted">${t('estimatedTotal')}</span><div class="build-total">${fmtMoney(result.total,result.currency)}</div><small class="data-note">${result.budget_match==='closest-available'?`${escapeHtml(t('closestAvailable'))} · ${escapeHtml(t('budgetDelta'))}: ${fmtMoney(result.budget_delta,result.currency)}`:escapeHtml(t('budgetMatchWithin'))}</small><small id="dataModeNote" class="data-note"></small></div><div class="build-actions"><button class="small-btn" id="saveBuild">${t('save')}</button><button class="small-btn" id="shareBuild">${t('share')}</button><button class="small-btn" id="copyBuild">${t('copy')}</button></div></div>`;
     qa('.preset-tab').forEach(x=>x.classList.remove('active'));q('[data-preset="smart"]')?.classList.add('active');
     el('heroFit').textContent=`${result.performance_fit}%`; el('heroBudget').textContent=fmtMoney(result.query?.budget ?? state.budget,result.query?.currency || state.currency);
-    el('saveBuild').onclick=saveBuild; el('copyBuild').onclick=copyBuild; el('shareBuild').onclick=shareBuild; bindHuntButtons(result); const dataNote=el('dataModeNote'); if(dataNote)dataNote.textContent=result.data_mode==='reference-demo'?t('referenceNote'):t('liveNote'); return;
+    el('saveBuild').onclick=saveBuild; el('copyBuild').onclick=copyBuild; el('shareBuild').onclick=shareBuild; bindHuntButtons(result); bindShoppingButton(result); const dataNote=el('dataModeNote'); if(dataNote)dataNote.textContent=result.data_mode==='reference-demo'?t('referenceNote'):t('liveNote'); return;
   }
   card.innerHTML=`<div class="result-hero"><div><span class="section-kicker">${t('matchReady')}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(result.tagline||t('matchSub'))}</p><div class="result-metrics"><span>${labels.value} <b>${result.value_score}</b></span><span>${labels.future} <b>${result.future_score}</b></span>${result.fps_estimate?`<span>${labels.fps} <b>${result.fps_estimate.low}–${result.fps_estimate.high}</b></span>`:''}</div></div><div class="score-ring"><div><strong>${result.performance_fit}</strong><span>${labels.fit}</span></div></div></div>
   <div class="parts-grid">${(result.parts||[]).map(p=>`<div class="part-card"><div class="part-top"><span class="part-cat">${escapeHtml(p.category)}</span><span class="part-price">${fmtMoney(p.price,p.currency)}</span></div><h4>${escapeHtml(p.name)}</h4><p>${escapeHtml(p.why)}</p><div class="offers">${(p.offers||[]).slice(0,5).map(o=>{const live=!!o.live; const noPrice=o.price==null; const label=live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference'); const meta=o.captured_at?` · ${new Date(o.captured_at).toLocaleDateString()}`:''; return `<a class="offer-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span class="offer-dot ${live?'on':''}"></span>${escapeHtml(o.store)}${noPrice?'':` · ${fmtMoney(o.price,o.currency)}`} <small class="offer-source">${label}${meta}</small> ${noPrice?`<small class="offer-action">${t('viewStore')}</small>`:'→'}</a>`}).join('')}</div></div>`).join('')}</div>
@@ -542,7 +566,7 @@ function renderResultPreset(result){
   <div class="build-footer"><div><span class="muted">${t('estimatedTotal')}</span><div class="build-total">${fmtMoney(result.total,result.currency)}</div><small class="data-note">${result.budget_match==='closest-available'?`${escapeHtml(t('closestAvailable'))} · ${escapeHtml(t('budgetDelta'))}: ${fmtMoney(result.budget_delta,result.currency)}`:escapeHtml(t('budgetMatchWithin'))}</small><small id="dataModeNote" class="data-note"></small></div><div class="build-actions"><button class="small-btn" id="saveBuild">${t('save')}</button><button class="small-btn" id="shareBuild">${t('share')}</button><button class="small-btn" id="copyBuild">${t('copy')}</button></div></div>`;
   qa('.preset-tab').forEach(x=>x.classList.remove('active'));const active=mode==='smart'?q('[data-preset="smart"]'):mode==='speed'?q('[data-preset="speed"]'):q('[data-preset="beast"]');active?.classList.add('active');
   el('heroFit').textContent=`${result.performance_fit}%`;el('heroBudget').textContent=fmtMoney(result.query?.budget ?? state.budget,result.query?.currency || state.currency);
-  el('saveBuild').onclick=saveBuild;el('copyBuild').onclick=copyBuild;const shareBtn=el('shareBuild');if(shareBtn)shareBtn.onclick=shareBuild;const dataNote=el('dataModeNote');if(dataNote)dataNote.textContent=result.data_mode==='reference-demo'?t('referenceNote'):t('liveNote');
+  el('saveBuild').onclick=saveBuild;el('copyBuild').onclick=copyBuild;const shareBtn=el('shareBuild');if(shareBtn)shareBtn.onclick=shareBuild;bindHuntButtons(result);bindShoppingButton(result);const dataNote=el('dataModeNote');if(dataNote)dataNote.textContent=result.data_mode==='reference-demo'?t('referenceNote'):t('liveNote');
 }
 
 qa('.preset-tab').forEach(b=>b.onclick=()=>{state.preset=b.dataset.preset;const idx=b.dataset.preset==='smart'?0:b.dataset.preset==='speed'?1:2;renderResultPreset(state.result.alternatives[idx]||state.result)});
