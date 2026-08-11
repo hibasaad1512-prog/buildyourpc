@@ -47,3 +47,6 @@ html,body{max-width:100%;overflow-x:hidden}
 .nearby-head{display:flex;justify-content:space-between;gap:18px;align-items:baseline;margin-bottom:14px}.nearby-head strong{font-size:15px}.nearby-head span{font-size:12px;color:var(--muted)}
 .nearby-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.nearby-card{padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);display:flex;flex-direction:column;gap:6px}.nearby-card strong{font-size:14px}.nearby-card span{font-size:16px;font-weight:800}.nearby-card small{color:var(--muted);line-height:1.4}
 @media (max-width:700px){.nearby-head{display:block}.nearby-head span{display:block;margin-top:5px}.nearby-grid{grid-template-columns:1fr}.nearby-card{min-width:0}.wizard-actions .primary-btn{min-width:0}.toast{left:16px;right:16px;width:auto;max-width:none}}
+
+/* v8 mobile resilience: never truncate game choices and keep dock lists usable on phones. */
+@media(max-width:700px){.tag-cloud{gap:7px}.tag{font-size:10px;padding:8px 10px}.dock-list{grid-template-columns:1fr;max-height:58vh}.language-dock,.country-dock{top:66px;right:8px;left:8px;width:auto;padding:14px;border-radius:20px}.dock-item{padding:10px 12px}.dock-search{margin:12px 0 9px}.mini-panel{padding:14px}}

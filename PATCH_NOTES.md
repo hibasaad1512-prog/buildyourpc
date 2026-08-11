@@ -62,3 +62,14 @@
 - Added one controlled retry for transient network/502/503/504/timeout failures.
 - Switched Gunicorn to 1 worker + 4 threads with a 90s request timeout to handle cold-start concurrency without multiplying memory usage.
 - Kept `/api/health` dependency-free and explicitly non-cacheable.
+
+
+## v8 — mobile / Cloudflare Pages / config resilience
+- Cloudflare Pages (`*.pages.dev`) now targets the Render API automatically: `https://buildyourpc-2tmf.onrender.com`.
+- Config cache key bumped to v8; invalid/small cached fallbacks are ignored.
+- `/api/config` uses warm-up + retry so a sleeping Render instance can recover before UI fallback.
+- Country dock now renders all configured countries and localizes country names using `Intl.DisplayNames`.
+- Game list no longer truncates the catalog; all configured games render.
+- Laptop priority chips are localized across the supported UI languages.
+- Mobile language/country docks use a single-column scrollable layout for easier selection.
+- Generic API fetch now supports controlled retries for transient 502/503/504/network failures.
