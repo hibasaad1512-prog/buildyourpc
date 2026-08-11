@@ -323,7 +323,10 @@ def current_offers(product: dict[str, Any], country: str, currency: str) -> list
         market_ok = not store.get("countries") or country in store["countries"] or "*" in store["countries"]
         if not market_ok:
             continue
-        price = fmt_money(float(store["usd_price"]), currency)
+        # Keep offer prices numeric in the API. Formatting belongs to the frontend;
+        # returning strings like "799 MAD" breaks numeric sorting and downstream
+        # market-price selection, which was the root cause of laptop/used failures.
+        price = round(local_from_usd(float(store["usd_price"]), currency), 2)
         name = store["name"]
         existing_names.add(name)
         reference.append(
@@ -331,7 +334,7 @@ def current_offers(product: dict[str, Any], country: str, currency: str) -> list
                 "store": name,
                 "price": price,
                 "currency": currency,
-                "url": store.get("url") or f"{store.get('base_url', 'https://www.google.com/search')}?q={query}",
+                "url": store.get("url") or store.get("base_url") or f"https://www.google.com/search?q={query}",
                 "availability": store.get("availability", "Reference price — verify store"),
                 "affiliate_ready": bool(store.get("affiliate_ready", False)),
                 "captured_at": None,
@@ -674,8 +677,18 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
     if not candidates:
         raise ValueError(f"No reference catalog items for {device} yet.")
     ranked = sorted(candidates, key=lambda p: score_product(p, need, usd_budget), reverse=True)
-    chosen = next((p for p in ranked if float(p["usd_price"]) <= usd_budget), ranked[-1])
+    within_budget = [p for p in ranked if float(p["usd_price"]) <= usd_budget]
+    if within_budget:
+        chosen = within_budget[0]
+        budget_match = "within-budget"
+    else:
+        # A strict spec match may not exist at this budget. Choose the nearest
+        # priced product instead of failing the request or silently returning an
+        # arbitrary/highest-ranked product far outside the user's budget.
+        chosen = min(ranked, key=lambda p: abs(float(p["usd_price"]) - usd_budget))
+        budget_match = "closest-available"
     price = float(chosen["usd_price"])
+    budget_delta_local = round(abs(local_from_usd(price - usd_budget, need.get("currency", "USD"))), 2)
     label = {"laptop": "Laptop", "prebuilt": "Prebuilt", "used": "Used / Refurbished"}.get(device, "Device")
     offers = current_offers(chosen, need.get("country", "US"), need.get("currency", "USD"))
     estimate = fps_estimate(need, chosen if device != "prebuilt" else None)
@@ -684,9 +697,12 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
         "For used/refurbished options, verify seller history, warranty, battery health and return policy before buying.",
         "Live market feeds should replace reference offers before public launch in each country.",
     ]
+    if budget_match == "closest-available":
+        reasons.insert(1, f"No catalog product matched the exact target budget; the engine selected the closest available option (about {budget_delta_local} away in the selected currency).")
     return {
         "type": device, "title": f"Best-fit {label}", "tagline": chosen.get("why", "Best fit in the reference catalog."),
         "total": round(local_from_usd(price, need.get("currency", "USD")), 2), "currency": need.get("currency", "USD"),
+        "budget_match": budget_match, "budget_delta": budget_delta_local,
         "performance_fit": min(99, chosen.get("performance", 0)), "value_score": min(99, chosen.get("value", 0)),
         "future_score": min(99, chosen.get("upgrade_score", 0)),
         "parts": [{"id": chosen["id"], "category": device, "name": chosen["name"], "brand": chosen.get("brand", ""),

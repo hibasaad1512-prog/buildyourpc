@@ -45,3 +45,12 @@
 
 ## Environment limitation
 - A full live Flask + browser integration run could not be completed inside this execution environment because Flask is not installed locally and outbound package installation is unavailable. `requirements.txt` remains production-ready for Render deployment.
+
+
+## Final recommendation stability patch — 2026-08-11
+
+- Fixed the root cause of laptop/used/prebuilt recommendation failures: reference-store prices were formatted as strings (for example `799 MAD`) inside the API and later converted back to floats for sorting. The API now always returns numeric offer prices and leaves formatting to the frontend.
+- Fixed reference-store URLs so existing catalog URLs are used directly instead of appending a second query string.
+- Product recommendations now choose an in-budget product when one exists; when no exact/affordable catalog item exists, the engine selects the closest priced product and returns `budget_match=closest-available` plus the approximate budget difference.
+- Added localized UI messaging for the closest-available case across all supported interface languages.
+- Verified laptop, used, prebuilt, and desktop recommendation paths with a local backend harness.
