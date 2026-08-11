@@ -942,7 +942,12 @@ def recommend():
         if not alternatives:
             alternatives = [base]
     else:
-        alternatives = [base]
+        # Keep the primary recommendation and an independent snapshot as the
+        # first alternative. Do NOT put `base` itself inside its `alternatives`
+        # list: that creates a circular reference and Flask/json.dumps returns
+        # HTTP 500 for every non-desktop device (laptop/prebuilt/used).
+        snapshot = {k: v for k, v in base.items() if k != "alternatives"}
+        alternatives = [snapshot]
     base["alternatives"] = alternatives
     base["query"] = {
         "budget": budget, "currency": payload["currency"], "device_type": payload.get("device_type", "not_sure"),
