@@ -11,6 +11,7 @@ const state = {
   games: [],
   preferences: [],
   existing_parts: [],
+  laptop_preferences: [],
   target_fps: null,
   resolution: null,
   result: null,
@@ -141,6 +142,25 @@ Object.entries(CORE_COMMON_EXTRA).forEach(([locale,extra])=>{ CORE_COMMON[locale
 
 
 const GLOBAL_UI_FALLBACK={en:{openMenu:'Open menu',bestValue:'BEST VALUE',build:'BUILD',sharedBuild:'Shared build',referenceBuild:'Reference build',reasonOffers:'Available shops and marketplaces are added for your market.'},fr:{openMenu:'Ouvrir le menu',bestValue:'MEILLEUR RAPPORT',build:'CONFIG',sharedBuild:'Configuration partagée',referenceBuild:'Configuration de référence',reasonOffers:'Les magasins et marketplaces disponibles sont ajoutés pour votre marché.'},ar:{openMenu:'فتح القائمة',bestValue:'أفضل قيمة',build:'تجميعة',sharedBuild:'تجميعة مشتركة',referenceBuild:'تجميعة مرجعية',reasonOffers:'تتم إضافة المتاجر والأسواق المتاحة في سوقك.'},es:{openMenu:'Abrir menú',bestValue:'MEJOR VALOR',build:'CONFIG',sharedBuild:'Configuración compartida',referenceBuild:'Configuración de referencia',reasonOffers:'Se añaden las tiendas y marketplaces disponibles para tu mercado.'}};
+const LAPTOP_SPEC_LABELS={
+  en:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'Storage',display:'Display',refresh:'Refresh rate',weight:'Weight',battery:'Battery',os:'OS',screen:'Panel'},
+  fr:{cpu:'Processeur',gpu:'GPU',ram:'RAM',storage:'Stockage',display:'Écran',refresh:'Fréquence',weight:'Poids',battery:'Batterie',os:'OS',screen:'Dalle'},
+  ar:{cpu:'المعالج',gpu:'كرت الشاشة',ram:'الذاكرة',storage:'التخزين',display:'الشاشة',refresh:'معدل التحديث',weight:'الوزن',battery:'البطارية',os:'النظام',screen:'نوع الشاشة'},
+  es:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'Almacenamiento',display:'Pantalla',refresh:'Frecuencia',weight:'Peso',battery:'Batería',os:'Sistema',screen:'Panel'},
+  de:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'Speicher',display:'Display',refresh:'Bildwiederholung',weight:'Gewicht',battery:'Akku',os:'Betriebssystem',screen:'Panel'},
+  it:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'Archiviazione',display:'Schermo',refresh:'Refresh',weight:'Peso',battery:'Batteria',os:'Sistema',screen:'Pannello'},
+  pt:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'Armazenamento',display:'Tela',refresh:'Taxa de atualização',weight:'Peso',battery:'Bateria',os:'Sistema',screen:'Painel'},
+  tr:{cpu:'İşlemci',gpu:'GPU',ram:'RAM',storage:'Depolama',display:'Ekran',refresh:'Yenileme',weight:'Ağırlık',battery:'Pil',os:'İşletim sistemi',screen:'Panel'},
+  ru:{cpu:'Процессор',gpu:'GPU',ram:'ОЗУ',storage:'Накопитель',display:'Экран',refresh:'Частота',weight:'Вес',battery:'Батарея',os:'ОС',screen:'Матрица'},
+  ja:{cpu:'CPU',gpu:'GPU',ram:'メモリ',storage:'ストレージ',display:'ディスプレイ',refresh:'リフレッシュレート',weight:'重量',battery:'バッテリー',os:'OS',screen:'パネル'},
+  ko:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'저장공간',display:'디스플레이',refresh:'주사율',weight:'무게',battery:'배터리',os:'OS',screen:'패널'},
+  zh:{cpu:'CPU',gpu:'GPU',ram:'内存',storage:'存储',display:'屏幕',refresh:'刷新率',weight:'重量',battery:'电池',os:'系统',screen:'面板'},
+  pl:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'Pamięć',display:'Ekran',refresh:'Odświeżanie',weight:'Waga',battery:'Bateria',os:'System',screen:'Matryca'},
+  nl:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'Opslag',display:'Scherm',refresh:'Verversing',weight:'Gewicht',battery:'Accu',os:'Besturingssysteem',screen:'Paneel'},
+  hi:{cpu:'CPU',gpu:'GPU',ram:'RAM',storage:'स्टोरेज',display:'डिस्प्ले',refresh:'रिफ्रेश रेट',weight:'वजन',battery:'बैटरी',os:'OS',screen:'पैनल'}
+};
+function laptopSpecLabel(key){return (LAPTOP_SPEC_LABELS[state.language]||LAPTOP_SPEC_LABELS.en)[key]||LAPTOP_SPEC_LABELS.en[key]||key;}
+
 function t(key, vars={}){ const lang=CORE_LOCALES[state.language]||TRANSLATIONS[state.language]||TRANSLATIONS.en; const common=CORE_COMMON[state.language]||{}; const legacy=LEGACY_COMMON[state.language]||{}; const globalFallback=GLOBAL_UI_FALLBACK[state.language]||GLOBAL_UI_FALLBACK.en; let text=lang[key]??common[key]??legacy[key]??globalFallback[key]??TRANSLATIONS[state.language]?.[key]??TRANSLATIONS.en[key]??key; return String(text).replace(/\{(\w+)\}/g,(_,k)=>vars[k]??`{${k}}`); }
 function localizedApiError(err){
   const code=String(err?.code||'');
@@ -232,7 +252,7 @@ function applyTranslations(){
   document.documentElement.lang=state.language; document.documentElement.dir=(config.languages.find(x=>x.code===state.language)?.dir)||(['ar','ur','fa','he'].includes(state.language)?'rtl':'ltr');
   document.title=`BuildYourPC — ${state.language==='ar'?'ابنِ جهازك بذكاء':state.language==='fr'?'Votre argent. Vos besoins. Votre PC.':state.language==='es'?'Tu dinero. Tus necesidades. Tu PC.':'Your money. Your needs. Your PC.'}`;
   const meta=q('meta[name="description"]');if(meta)meta.content=t('heroSub');
-  setStep(state.step); updateBudgetUI();
+  setStep(state.step); syncDeviceSpecificUI(); updateBudgetUI();
   const brand=q('.brand');if(brand)brand.setAttribute('aria-label', state.language==='ar'?'الصفحة الرئيسية لـ BuildYourPC':'BuildYourPC home');
 }
 
@@ -243,6 +263,18 @@ async function loadExistingBuild(){
   try{
     const d=await apiFetch(`/api/builds/${m[1]}`);
     state.result=d.payload;
+    const qy=d.payload?.query||{};
+    if(qy.device_type) state.device_type=qy.device_type;
+    if(qy.country) state.country=qy.country;
+    if(qy.currency) state.currency=qy.currency;
+    if(Array.isArray(qy.use_cases)) state.use_cases=qy.use_cases;
+    if(Array.isArray(qy.games)) state.games=qy.games;
+    if(Array.isArray(qy.preferences)) state.preferences=qy.preferences;
+    if(Array.isArray(qy.existing_parts)) state.existing_parts=qy.existing_parts;
+    if(Array.isArray(qy.laptop_preferences)) state.laptop_preferences=qy.laptop_preferences;
+    if(qy.target_fps!=null) state.target_fps=qy.target_fps;
+    if(qy.resolution) state.resolution=qy.resolution;
+    updateCountryUI();updateBudgetUI();syncDeviceSpecificUI();
     renderResults();
     document.getElementById('results').scrollIntoView({behavior:'instant',block:'start'});
     toast(t('savedLoaded'));
@@ -293,7 +325,17 @@ function filterDock(inputId,list,render){const term=el(inputId).value.toLowerCas
 function setStep(n){state.step=Math.max(1,Math.min(5,n));qa('.wizard-step').forEach(s=>s.classList.toggle('active',Number(s.dataset.step)===state.step));el('stepLabel').textContent=t('stepOf',{n:state.step});el('progressFill').style.width=`${state.step*20}%`;el('backBtn').disabled=state.step===1;el('wizardNote').textContent=state.step===2?t('budgetEnough'):state.step<5?t('everythingOptional'):t('readyWhen');window.scrollTo({top:document.getElementById('builder').offsetTop-70,behavior:'smooth'})}
 function toggleChoice(elm){elm.classList.toggle('selected')}
 
-qa('[data-device]').forEach(b=>b.onclick=()=>{qa('[data-device]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');state.device_type=b.dataset.device;if(state.device_type==='not_sure')toast(t('chooseBest'))})
+function syncDeviceSpecificUI(){
+  const panel=el('laptopExtras');
+  if(!panel) return;
+  const show=state.device_type==='laptop';
+  panel.hidden=!show;
+  if(!show) return;
+  qa('[data-lpref]').forEach(b=>b.classList.toggle('selected',state.laptop_preferences.includes(b.dataset.lpref)));
+}
+qa('[data-device]').forEach(b=>b.onclick=()=>{qa('[data-device]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');state.device_type=b.dataset.device;syncDeviceSpecificUI();if(state.device_type==='not_sure')toast(t('chooseBest'))})
+qa('[data-lpref]').forEach(b=>b.onclick=()=>{const k=b.dataset.lpref;state.laptop_preferences=state.laptop_preferences.includes(k)?state.laptop_preferences.filter(x=>x!==k):[...state.laptop_preferences,k];syncDeviceSpecificUI();});
+
 qa('[data-goal]').forEach(b=>b.onclick=()=>{toggleChoice(b);state.use_cases=qa('[data-goal].selected').map(x=>x.dataset.goal)})
 qa('[data-existing]').forEach(b=>b.onclick=()=>{b.classList.toggle('selected');state.existing_parts=qa('[data-existing].selected').map(x=>x.dataset.existing)})
 qa('[data-pref]').forEach(b=>b.onclick=()=>{b.classList.toggle('selected');state.preferences=qa('[data-pref].selected').map(x=>x.dataset.pref)})
@@ -310,7 +352,11 @@ async function runRecommendation(){
   if(!Number.isFinite(Number(state.budget)) || state.budget<min || state.budget>max){toast(`${t('budgetRange')} ${fmtMoney(min,state.currency)} – ${fmtMoney(max,state.currency)}`);setStep(2);return}
   if(busyActions.has('recommend')) return;
   busyActions.add('recommend'); const btn=el('nextBtn'); btn.disabled=true; btn.innerHTML=t('matching')+' <span>…</span>';
-  try{state.result=await apiFetch('/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...state,budget:Number(state.budget),currency:state.currency,country:state.country})});state.preset='smart';renderResults();document.getElementById('results').scrollIntoView({behavior:'smooth'});}
+  try{
+    const requestPayload={device_type:state.device_type,budget:Number(state.budget),currency:state.currency,country:state.country,use_cases:state.use_cases,games:state.games,preferences:state.preferences,existing_parts:state.existing_parts,target_fps:state.target_fps,resolution:state.resolution,laptop_preferences:state.laptop_preferences};
+    state.result=await apiFetch('/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(requestPayload)});
+    state.preset='smart';renderResults();document.getElementById('results').scrollIntoView({behavior:'smooth'});
+  }
   catch(e){console.error('recommend failed',e);toast(localizedApiError(e));}
   finally{busyActions.delete('recommend');btn.disabled=false;btn.innerHTML=t('continue')+' <span>→</span>';}
 }
@@ -333,7 +379,9 @@ function renderResultPreset(result){
   if(result.type==='laptop' && product){
     card.innerHTML=`
       <div class="result-hero"><div><span class="section-kicker">${t('matchReady')}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(product.why||t('matchSub'))}</p><div class="result-metrics"><span>${labels.value} <b>${result.value_score}</b></span><span>${labels.future} <b>${result.future_score}</b></span></div></div><div class="score-ring"><div><strong>${result.performance_fit}</strong><span>${labels.fit}</span></div></div></div>
-      <div class="portable-product-card"><div><span class="part-cat">${t('laptop')}</span><h4>${escapeHtml(product.name)}</h4><p>${escapeHtml(product.why||'')}</p></div><div class="portable-price">${fmtMoney(product.price,product.currency)}</div><div class="portable-offers">${(product.offers||[]).slice(0,8).map(o=>{const live=!!o.live;const noPrice=o.price==null;const label=live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference');return `<a class="offer-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span class="offer-dot ${live?'on':''}"></span>${escapeHtml(o.store)}${noPrice?'':` · ${fmtMoney(o.price,o.currency)}`} <small class="offer-source">${label}</small>${noPrice?`<small class="offer-action">${t('viewStore')}</small>`:'→'}</a>`}).join('')}</div></div>
+      <div class="portable-product-card"><div><span class="part-cat">${t('laptop')}</span><h4>${escapeHtml(product.name)}</h4><p>${escapeHtml(product.why||'')}</p><div class="laptop-spec-grid">${[
+        ['cpu','cpu_model'],['gpu','gpu_model'],['ram','ram_gb'],['storage','storage_gb'],['display','display_size'],['refresh','refresh_hz'],['weight','weight_kg'],['battery','battery_wh'],['os','os'],['screen','screen_type']
+      ].filter(([k,key])=>product.specs?.[key]!=null).map(([k,key])=>`<div class="laptop-spec"><span>${escapeHtml(laptopSpecLabel(k))}</span><strong>${escapeHtml(String(product.specs[key]))}${['ram_gb','storage_gb','display_size','refresh_hz','weight_kg','battery_wh'].includes(key)?({'ram_gb':' GB','storage_gb':' GB','display_size':' in','refresh_hz':' Hz','weight_kg':' kg','battery_wh':' Wh'}[key]||''):''}</strong></div>`).join('')}</div></div><div class="portable-price">${fmtMoney(product.price,product.currency)}</div><div class="portable-offers">${(product.offers||[]).slice(0,8).map(o=>{const live=!!o.live;const noPrice=o.price==null;const label=live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference');return `<a class="offer-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span class="offer-dot ${live?'on':''}"></span>${escapeHtml(o.store)}${noPrice?'':` · ${fmtMoney(o.price,o.currency)}`} <small class="offer-source">${label}</small>${noPrice?`<small class="offer-action">${t('viewStore')}</small>`:'→'}</a>`}).join('')}</div></div>
       <div class="reason-strip">${reasonKeys.map((k,i)=>`<div class="reason-box"><strong>${[t('whyFits'),t('goalCheck'),t('moneyMove')][i]}</strong>${escapeHtml(t(k))}</div>`).join('')}</div>
       <div class="build-footer"><div><span class="muted">${t('estimatedTotal')}</span><div class="build-total">${fmtMoney(result.total,result.currency)}</div><small id="dataModeNote" class="data-note"></small></div><div class="build-actions"><button class="small-btn" id="saveBuild">${t('save')}</button><button class="small-btn" id="shareBuild">${t('share')}</button><button class="small-btn" id="copyBuild">${t('copy')}</button></div></div>`;
     qa('.preset-tab').forEach(x=>x.classList.remove('active'));q('[data-preset="smart"]')?.classList.add('active');

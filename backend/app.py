@@ -39,6 +39,10 @@ KO_FI_URL = os.getenv("KO_FI_URL", "https://ko-fi.com/simbawwyy00")
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
 LIVE_PRICE_SYNC_ENABLED = os.getenv("LIVE_PRICE_SYNC_ENABLED", "1") != "0"
 FX_API_ENABLED = os.getenv("FX_API_ENABLED", "1") != "0"
+# Never make end-user recommendation requests depend on an external FX service.
+# Live refresh is an explicit/admin action; normal requests use cached rates or
+# the centralized fallback table. This is especially important for Render free.
+FX_AUTO_REFRESH = os.getenv("FX_AUTO_REFRESH", "0") == "1"
 FX_CACHE_HOURS = float(os.getenv("FX_CACHE_HOURS", "24"))
 FX_BOOTSTRAP_DONE = False
 
@@ -183,7 +187,7 @@ def refresh_fx_rates() -> dict[str, float]:
 
 def ensure_fx_cache() -> None:
     global FX_BOOTSTRAP_DONE
-    if FX_BOOTSTRAP_DONE or not FX_API_ENABLED:
+    if FX_BOOTSTRAP_DONE or not FX_API_ENABLED or not FX_AUTO_REFRESH:
         return
     FX_BOOTSTRAP_DONE = True
     if len(_cached_fx_from_eur()) < 5:
@@ -374,6 +378,7 @@ def score_product(product: dict[str, Any], need: dict[str, Any], budget_remainin
     use_cases = set(need.get("use_cases", []))
     games = set(need.get("games", []))
     prefs = set(need.get("preferences", []))
+    laptop_prefs = set(need.get("laptop_preferences", []))
     resolution = need.get("resolution") or "smart"
     target_fps = int(need.get("target_fps") or 0)
 
@@ -400,6 +405,20 @@ def score_product(product: dict[str, Any], need: dict[str, Any], budget_remainin
         score += float(product.get("compact", 0)) * 0.05
     if "Wi-Fi" in prefs:
         score += float(product.get("wifi", 0)) * 0.03
+
+    if product.get("device") == "laptop":
+        if "Lightweight" in laptop_prefs:
+            score += max(0.0, 3.0 - float(product.get("weight_kg", 3.0))) * 4.0
+        if "Long battery" in laptop_prefs:
+            score += float(product.get("battery_wh", 50)) * 0.035
+        if "High refresh" in laptop_prefs:
+            score += float(product.get("refresh_hz", 60)) * 0.02
+        if "Large screen" in laptop_prefs:
+            score += float(product.get("display_size", 14)) * 0.45
+        if "Creator" in laptop_prefs:
+            score += float(product.get("creation", 0)) * 0.07
+        if "Portable" in laptop_prefs:
+            score += float(product.get("compact", 0)) * 0.06
 
     if resolution == "1440p":
         score += float(product.get("performance", 0)) * 0.04
@@ -679,6 +698,13 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
             "is_portable_product": device == "laptop",
             "product_only": device in {"laptop", "prebuilt", "used"},
             "category": "laptop" if device == "laptop" else device,
+            "specs": {
+                k: chosen.get(k) for k in [
+                    "cpu_model", "gpu_model", "ram_gb", "storage_gb", "storage_type",
+                    "display_size", "display_resolution", "refresh_hz", "weight_kg",
+                    "battery_wh", "os", "screen_type", "warranty_months", "condition"
+                ] if chosen.get(k) not in (None, "")
+            } if device == "laptop" else {},
         },
         "data_mode": "reference-demo" if not any(o.get("source") != "reference-demo" for o in offers) else "live-plus-reference",
     }
@@ -888,12 +914,25 @@ def recommend():
         logger.exception("unexpected recommendation failure for country=%s currency=%s device=%s", payload.get("country"), payload.get("currency"), payload.get("device_type"))
         return jsonify({"error": {"code": "RECOMMENDATION_ERROR", "message": "The recommendation service failed safely. Please retry."}}), 500
     # Alternative views use the same constraint set but reweight the engine rather than maxing raw FPS blindly.
-    alternatives = [choose_desktop(payload, usd_from_local(budget, payload["currency"]), m) for m in ["smart", "speed", "beast"]] if base["type"] == "desktop" else [base]
+    # Never allow an optional alternative to turn a successful primary recommendation into a 500.
+    if base["type"] == "desktop":
+        alternatives = []
+        usd_budget = usd_from_local(budget, payload["currency"])
+        for mode in ("smart", "speed", "beast"):
+            try:
+                alternatives.append(choose_desktop(payload, usd_budget, mode))
+            except Exception:
+                logger.exception("optional desktop alternative failed: mode=%s", mode)
+        if not alternatives:
+            alternatives = [base]
+    else:
+        alternatives = [base]
     base["alternatives"] = alternatives
     base["query"] = {
         "budget": budget, "currency": payload["currency"], "device_type": payload.get("device_type", "not_sure"),
         "country": payload["country"], "use_cases": payload.get("use_cases", []), "games": payload.get("games", []),
         "target_fps": payload.get("target_fps"), "resolution": payload.get("resolution"), "existing_parts": payload.get("existing_parts", []),
+        "laptop_preferences": payload.get("laptop_preferences", []),
     }
     event("recommendation_created", country=payload["country"], meta={"device": base["type"], "budget": budget, "currency": payload["currency"]})
     return jsonify(base)

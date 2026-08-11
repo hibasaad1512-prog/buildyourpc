@@ -1806,76 +1806,6 @@
       ]
     },
     {
-      "id": "laptop-acer",
-      "device": "laptop",
-      "category": "laptop",
-      "name": "15.6-in Gaming Laptop • RTX 4060 • 16GB",
-      "brand": "ExampleBook",
-      "usd_price": 899,
-      "performance": 86,
-      "value": 90,
-      "gaming": 92,
-      "streaming": 83,
-      "creation": 84,
-      "quiet": 62,
-      "compact": 95,
-      "wifi": 100,
-      "upgrade_score": 67,
-      "games": [
-        "Fortnite",
-        "Warzone",
-        "GTA V",
-        "Valorant",
-        "FC"
-      ],
-      "why": "Balanced 1080p/1440p-class gaming laptop for buyers who need portability.",
-      "stores": [
-        {
-          "name": "Amazon",
-          "usd_price": 899,
-          "base_url": "https://www.amazon.com/s?k=gaming+laptop+RTX+4060+16GB",
-          "countries": [
-            "*"
-          ]
-        }
-      ]
-    },
-    {
-      "id": "laptop-lenovo",
-      "device": "laptop",
-      "category": "laptop",
-      "name": "16-in Gaming Laptop • RTX 4070 • 32GB",
-      "brand": "ExampleLegion",
-      "usd_price": 1299,
-      "performance": 94,
-      "value": 84,
-      "gaming": 96,
-      "streaming": 92,
-      "creation": 91,
-      "quiet": 60,
-      "compact": 92,
-      "wifi": 100,
-      "upgrade_score": 71,
-      "games": [
-        "Fortnite",
-        "Warzone",
-        "GTA V",
-        "Cyberpunk 2077",
-        "Apex Legends"
-      ],
-      "why": "Higher-end portable performance for users who want strong headroom away from a desk.",
-      "stores": [
-        {
-          "name": "Amazon",
-          "usd_price": 1299,
-          "base_url": "https://www.amazon.com/s?k=gaming+laptop+RTX+4070+32GB",
-          "countries": [
-            "*"
-          ]
-        }
-      ]
-    },
-    {
       "id": "cpu-5500",
       "device": "desktop",
       "category": "cpu",
@@ -2200,6 +2130,282 @@
           "name": "Marketplace",
           "usd_price": 649,
           "base_url": "https://www.ebay.com/sch/i.html?_nkw=gaming+pc",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laptop-acer",
+      "device": "laptop",
+      "category": "laptop",
+      "name": "15.6-in Gaming Laptop • RTX 4060 • 16GB",
+      "brand": "ExampleBook",
+      "usd_price": 899,
+      "performance": 86,
+      "value": 92,
+      "gaming": 92,
+      "streaming": 83,
+      "creation": 84,
+      "quiet": 62,
+      "compact": 95,
+      "wifi": 100,
+      "upgrade_score": 67,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Valorant",
+        "FC"
+      ],
+      "why": "Balanced 1080p/1440p-class gaming laptop for buyers who need portability.",
+      "cpu_model": "Ryzen 7 7840HS",
+      "gpu_model": "GeForce RTX 4060 8GB",
+      "ram_gb": 16,
+      "storage_gb": 1000,
+      "storage_type": "NVMe SSD",
+      "display_size": 15.6,
+      "display_resolution": "2560×1440",
+      "refresh_hz": 165,
+      "weight_kg": 2.1,
+      "battery_wh": 76,
+      "os": "Windows 11",
+      "screen_type": "IPS",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 899,
+          "base_url": "https://www.amazon.com/s?k=gaming+laptop+RTX+4060+16GB",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laptop-lenovo",
+      "device": "laptop",
+      "category": "laptop",
+      "name": "16-in Gaming Laptop • RTX 4070 • 32GB",
+      "brand": "ExampleLegion",
+      "usd_price": 1299,
+      "performance": 94,
+      "value": 86,
+      "gaming": 96,
+      "streaming": 92,
+      "creation": 91,
+      "quiet": 60,
+      "compact": 92,
+      "wifi": 100,
+      "upgrade_score": 71,
+      "games": [
+        "Fortnite",
+        "Warzone",
+        "GTA V",
+        "Cyberpunk 2077",
+        "Apex Legends"
+      ],
+      "why": "Higher-end portable performance for users who want strong headroom away from a desk.",
+      "cpu_model": "Core i9-14900HX",
+      "gpu_model": "GeForce RTX 4070 8GB",
+      "ram_gb": 32,
+      "storage_gb": 1000,
+      "storage_type": "NVMe SSD",
+      "display_size": 16,
+      "display_resolution": "2560×1600",
+      "refresh_hz": 240,
+      "weight_kg": 2.5,
+      "battery_wh": 90,
+      "os": "Windows 11",
+      "screen_type": "IPS",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 1299,
+          "base_url": "https://www.amazon.com/s?k=gaming+laptop+RTX+4070+32GB",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laptop-budget",
+      "device": "laptop",
+      "category": "laptop",
+      "name": "15.6-in Gaming Laptop • RTX 3050 • 16GB",
+      "brand": "ValueBook",
+      "usd_price": 699,
+      "performance": 77,
+      "value": 95,
+      "gaming": 82,
+      "streaming": 76,
+      "creation": 72,
+      "quiet": 68,
+      "compact": 96,
+      "wifi": 100,
+      "upgrade_score": 63,
+      "games": [
+        "Fortnite",
+        "Valorant",
+        "Minecraft",
+        "FC"
+      ],
+      "why": "A lower-cost gaming laptop with a sensible balance for 1080p gaming and school/work.",
+      "cpu_model": "Core i5-12450H",
+      "gpu_model": "GeForce RTX 3050 6GB",
+      "ram_gb": 16,
+      "storage_gb": 512,
+      "storage_type": "NVMe SSD",
+      "display_size": 15.6,
+      "display_resolution": "1920×1080",
+      "refresh_hz": 144,
+      "weight_kg": 2.3,
+      "battery_wh": 70,
+      "os": "Windows 11",
+      "screen_type": "IPS",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 699,
+          "base_url": "https://www.amazon.com/s?k=RTX+3050+gaming+laptop+16GB",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laptop-creator",
+      "device": "laptop",
+      "category": "laptop",
+      "name": "16-in Creator Laptop • RTX 4060 • 32GB",
+      "brand": "CreatorBook",
+      "usd_price": 1099,
+      "performance": 88,
+      "value": 91,
+      "gaming": 88,
+      "streaming": 90,
+      "creation": 95,
+      "quiet": 74,
+      "compact": 92,
+      "wifi": 100,
+      "upgrade_score": 75,
+      "games": [
+        "Cyberpunk 2077",
+        "Apex Legends",
+        "GTA V"
+      ],
+      "why": "A creator-focused portable machine with extra memory and a color-ready display.",
+      "cpu_model": "Ryzen 9 7940HS",
+      "gpu_model": "GeForce RTX 4060 8GB",
+      "ram_gb": 32,
+      "storage_gb": 1000,
+      "storage_type": "NVMe SSD",
+      "display_size": 16,
+      "display_resolution": "2560×1600",
+      "refresh_hz": 165,
+      "weight_kg": 2.0,
+      "battery_wh": 84,
+      "os": "Windows 11",
+      "screen_type": "IPS 100% sRGB",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 1099,
+          "base_url": "https://www.amazon.com/s?k=creator+laptop+RTX+4060+32GB",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laptop-ultrabook",
+      "device": "laptop",
+      "category": "laptop",
+      "name": "14-in Performance Laptop • RTX 4050 • 16GB",
+      "brand": "AirBook",
+      "usd_price": 849,
+      "performance": 82,
+      "value": 90,
+      "gaming": 80,
+      "streaming": 82,
+      "creation": 83,
+      "quiet": 88,
+      "compact": 100,
+      "wifi": 100,
+      "upgrade_score": 69,
+      "games": [
+        "Fortnite",
+        "Valorant",
+        "Minecraft"
+      ],
+      "why": "A lighter portable option for work, travel and occasional gaming.",
+      "cpu_model": "Core Ultra 7 155H",
+      "gpu_model": "GeForce RTX 4050 6GB",
+      "ram_gb": 16,
+      "storage_gb": 1000,
+      "storage_type": "NVMe SSD",
+      "display_size": 14,
+      "display_resolution": "2880×1800",
+      "refresh_hz": 120,
+      "weight_kg": 1.65,
+      "battery_wh": 75,
+      "os": "Windows 11",
+      "screen_type": "OLED",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 849,
+          "base_url": "https://www.amazon.com/s?k=RTX+4050+OLED+14+inch+laptop",
+          "countries": [
+            "*"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "laptop-4070-creator",
+      "device": "laptop",
+      "category": "laptop",
+      "name": "17-in Performance Laptop • RTX 4070 • 32GB",
+      "brand": "MaxBook",
+      "usd_price": 1499,
+      "performance": 96,
+      "value": 83,
+      "gaming": 98,
+      "streaming": 94,
+      "creation": 96,
+      "quiet": 55,
+      "compact": 84,
+      "wifi": 100,
+      "upgrade_score": 74,
+      "games": [
+        "Cyberpunk 2077",
+        "Warzone",
+        "GTA V",
+        "Apex Legends"
+      ],
+      "why": "Maximum portable performance for demanding gaming and creator workloads.",
+      "cpu_model": "Core i9-14900HX",
+      "gpu_model": "GeForce RTX 4070 8GB",
+      "ram_gb": 32,
+      "storage_gb": 2000,
+      "storage_type": "NVMe SSD",
+      "display_size": 17.3,
+      "display_resolution": "2560×1440",
+      "refresh_hz": 240,
+      "weight_kg": 2.8,
+      "battery_wh": 99,
+      "os": "Windows 11",
+      "screen_type": "IPS",
+      "stores": [
+        {
+          "name": "Amazon",
+          "usd_price": 1499,
+          "base_url": "https://www.amazon.com/s?k=RTX+4070+17+inch+32GB+laptop",
           "countries": [
             "*"
           ]
