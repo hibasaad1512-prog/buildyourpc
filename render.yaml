@@ -5,7 +5,7 @@ services:
     plan: free
     rootDir: .
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn backend.app:app
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 90 --keep-alive 5 --access-logfile - --error-logfile - backend.app:app
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION

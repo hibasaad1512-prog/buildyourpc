@@ -5,12 +5,16 @@ import io
 import logging
 import json
 import os
+import re
 import secrets
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
+from functools import wraps
+
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import requests
 
@@ -30,7 +34,7 @@ app = Flask(__name__, static_folder=str(ROOT / "frontend"), static_url_path="")
 logger = logging.getLogger(__name__)
 app.config["JSON_SORT_KEYS"] = False
 ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "*")
-CORS(app, resources={r"/api/*": {"origins": [x.strip() for x in ALLOWED_ORIGINS.split(",")] if ALLOWED_ORIGINS != "*" else "*"}})
+CORS(app, resources={r"/api/*": {"origins": [x.strip() for x in ALLOWED_ORIGINS.split(",")] if ALLOWED_ORIGINS != "*" else "*", "supports_credentials": True}})
 
 with CATALOG_PATH.open("r", encoding="utf-8") as f:
     CATALOG = json.load(f)
@@ -69,8 +73,38 @@ def init_db() -> None:
             payload TEXT NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             views INTEGER NOT NULL DEFAULT 0,
-            shares INTEGER NOT NULL DEFAULT 0
+            shares INTEGER NOT NULL DEFAULT 0,
+            user_id INTEGER
         );
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            display_name TEXT NOT NULL,
+            plan TEXT NOT NULL DEFAULT 'free' CHECK(plan IN ('free','premium')),
+            premium_until TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS auth_sessions (
+            token TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            expires_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id);
+        CREATE INDEX IF NOT EXISTS idx_auth_sessions_expiry ON auth_sessions(expires_at);
+
+        CREATE TABLE IF NOT EXISTS favorites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            build_id TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, build_id),
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
         CREATE TABLE IF NOT EXISTS prices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_id TEXT NOT NULL,
@@ -128,11 +162,122 @@ def init_db() -> None:
         con.execute("PRAGMA synchronous=NORMAL")
     except sqlite3.DatabaseError:
         logger.warning("SQLite WAL mode could not be enabled; continuing with the configured journal mode.")
+    # Lightweight migration for databases created before account support.
+    try:
+        cols = {row[1] for row in con.execute("PRAGMA table_info(builds)").fetchall()}
+        if "user_id" not in cols:
+            con.execute("ALTER TABLE builds ADD COLUMN user_id INTEGER")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_builds_user_id ON builds(user_id)")
+    except sqlite3.DatabaseError:
+        logger.exception("Could not migrate builds table")
     con.commit()
     con.close()
 
 
 init_db()
+
+SESSION_COOKIE = "byp_session"
+SESSION_DAYS = int(os.getenv("SESSION_DAYS", "30"))
+PREMIUM_AVAILABLE = os.getenv("PREMIUM_AVAILABLE", "0") == "1"
+PREMIUM_FEATURES = [
+    "Advanced price tracking",
+    "Build history",
+    "Upgrade planner",
+    "Advanced compatibility insights",
+    "Premium deal ranking",
+]
+
+
+def _iso_after_days(days: int) -> str:
+    from datetime import timedelta
+    return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
+
+
+def _clean_email(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
+def _public_user(row: sqlite3.Row | None) -> dict[str, Any] | None:
+    if not row:
+        return None
+    premium_until = row["premium_until"]
+    now = datetime.now(timezone.utc).isoformat()
+    active = row["plan"] == "premium" and bool(premium_until and premium_until > now)
+    return {
+        "id": row["id"],
+        "email": row["email"],
+        "display_name": row["display_name"],
+        "plan": "premium" if active else "free",
+        "premium_active": active,
+        "premium_until": premium_until,
+        "created_at": row["created_at"],
+    }
+
+
+def _session_token_from_request() -> str | None:
+    token = request.cookies.get(SESSION_COOKIE)
+    if token:
+        return token
+    auth = request.headers.get("Authorization", "")
+    if auth.lower().startswith("bearer "):
+        return auth[7:].strip() or None
+    return None
+
+
+def current_user() -> sqlite3.Row | None:
+    token = _session_token_from_request()
+    if not token:
+        return None
+    con = db()
+    row = con.execute(
+        """SELECT u.* FROM auth_sessions s
+           JOIN users u ON u.id=s.user_id
+           WHERE s.token=? AND s.expires_at>?""",
+        (token, datetime.now(timezone.utc).isoformat()),
+    ).fetchone()
+    con.close()
+    return row
+
+
+def create_session(user_id: int) -> str:
+    token = secrets.token_urlsafe(32)
+    con = db()
+    con.execute(
+        "INSERT INTO auth_sessions(token,user_id,expires_at) VALUES(?,?,?)",
+        (token, user_id, _iso_after_days(SESSION_DAYS)),
+    )
+    con.commit()
+    con.close()
+    return token
+
+
+def delete_session(token: str | None) -> None:
+    if not token:
+        return
+    con = db()
+    con.execute("DELETE FROM auth_sessions WHERE token=?", (token,))
+    con.commit()
+    con.close()
+
+
+def auth_required(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        user = current_user()
+        if not user:
+            return jsonify({"error": {"code": "AUTH_REQUIRED", "message": "Please sign in to continue."}}), 401
+        return fn(user, *args, **kwargs)
+    return wrapped
+
+
+def premium_required(fn):
+    @wraps(fn)
+    def wrapped(user, *args, **kwargs):
+        public = _public_user(user)
+        if not public or not public["premium_active"]:
+            return jsonify({"error": {"code": "PREMIUM_REQUIRED", "message": "This feature is reserved for BuildYourPC Premium."}}), 403
+        return fn(user, *args, **kwargs)
+    return wrapped
 
 
 def _cached_fx_from_eur() -> dict[str, float]:
@@ -343,7 +488,11 @@ def current_offers(product: dict[str, Any], country: str, currency: str) -> list
                 "live": False,
             }
         )
-    marketplace = marketplace_offers(product_name=product["name"], country=country, currency=currency, existing_names=existing_names)
+    try:
+        marketplace = marketplace_offers(product_name=product["name"], country=country, currency=currency, existing_names=existing_names)
+    except Exception as exc:
+        logger.warning("marketplace link generation failed for %s/%s: %s", product.get("id"), country, exc)
+        marketplace = []
     if live:
         return sorted(live, key=lambda x: float(x.get("price") or 0)) + reference[:2] + marketplace
     return sorted(reference, key=lambda x: float(x.get("price") or 0)) + marketplace
@@ -697,6 +846,19 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
         "For used/refurbished options, verify seller history, warranty, battery health and return policy before buying.",
         "Live market feeds should replace reference offers before public launch in each country.",
     ]
+    nearby_options = []
+    for alt in ranked:
+        if alt.get("id") == chosen.get("id"):
+            continue
+        alt_price = float(alt.get("usd_price", 0))
+        if not nearby_options or len(nearby_options) < 3:
+            nearby_options.append({
+                "id": alt["id"], "name": alt["name"], "brand": alt.get("brand", ""),
+                "price": round(local_from_usd(alt_price, need.get("currency", "USD")), 2),
+                "currency": need.get("currency", "USD"), "performance": alt.get("performance", 0),
+                "value": alt.get("value", 0), "why": alt.get("why", ""),
+                "offers": current_offers(alt, need.get("country", "US"), need.get("currency", "USD")),
+            })
     if budget_match == "closest-available":
         reasons.insert(1, f"No catalog product matched the exact target budget; the engine selected the closest available option (about {budget_delta_local} away in the selected currency).")
     return {
@@ -709,7 +871,7 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
                    "price": round(local_from_usd(price, need.get("currency", "USD")), 2), "currency": need.get("currency", "USD"),
                    "performance": chosen.get("performance", 0), "why": chosen.get("why", ""), "offers": offers,
                    "specs": {k: chosen.get(k) for k in ["condition", "warranty_months"] if k in chosen}}],
-        "reasons": reasons, "fps_estimate": estimate,
+        "reasons": reasons, "fps_estimate": estimate, "nearby_options": nearby_options,
         "device_details": {
             "is_portable_product": device == "laptop",
             "product_only": device in {"laptop", "prebuilt", "used"},
@@ -723,6 +885,117 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
             } if device == "laptop" else {},
         },
         "data_mode": "reference-demo" if not any(o.get("source") != "reference-demo" for o in offers) else "live-plus-reference",
+    }
+
+
+def _safe_reference_offer(product: dict[str, Any], currency: str) -> dict[str, Any]:
+    """Build one deterministic reference offer without DB, FX service or marketplace dependencies."""
+    price = round(local_from_usd(float(product.get("usd_price", 0)), currency), 2)
+    store = (product.get("stores") or [{"name": "Reference catalog", "base_url": "https://www.google.com/search?q=" + quote_plus(product.get("name", ""))}])[0]
+    return {
+        "store": store.get("name", "Reference catalog"),
+        "price": price,
+        "currency": currency,
+        "url": store.get("base_url") or ("https://www.google.com/search?q=" + quote_plus(product.get("name", ""))),
+        "availability": "Reference price — verify before buying",
+        "affiliate_ready": False,
+        "captured_at": None,
+        "source": "reference-fallback",
+        "stale": False,
+        "live": False,
+    }
+
+
+def _reference_fallback_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
+    """Fail-open recommendation used only when the normal engine cannot complete.
+
+    It deliberately avoids SQLite price feeds, external providers and marketplace
+    generation. The user still gets a useful result instead of a generic 500.
+    """
+    device = str(payload.get("device_type", "desktop") or "desktop").lower()
+    if device == "not_sure":
+        device = "laptop" if payload.get("portability") or "Laptop" in payload.get("preferences", []) else "desktop"
+    currency = str(payload.get("currency", "USD")).upper()
+    budget = float(payload.get("budget", 0) or 0)
+    usd_budget = usd_from_local(budget, currency)
+    if device in {"laptop", "prebuilt", "used"}:
+        pool = catalog_products(device, device) or catalog_products(device)
+        if not pool:
+            raise ValueError(f"No reference catalog items for {device}.")
+        ranked = sorted(pool, key=lambda p: (abs(float(p.get("usd_price", 0)) - usd_budget), -float(p.get("value", 0))))
+        chosen = ranked[0]
+        local_price = round(local_from_usd(float(chosen.get("usd_price", 0)), currency), 2)
+        delta = round(abs(local_price - budget), 2)
+        nearby = []
+        for p in ranked[1:4]:
+            nearby.append({
+                "id": p["id"], "name": p["name"], "brand": p.get("brand", ""),
+                "price": round(local_from_usd(float(p.get("usd_price", 0)), currency), 2),
+                "currency": currency, "performance": p.get("performance", 0),
+                "value": p.get("value", 0), "why": p.get("why", ""),
+                "offers": [_safe_reference_offer(p, currency)],
+            })
+        result = {
+            "type": device, "title": f"Best-fit { {'laptop':'Laptop','prebuilt':'Prebuilt','used':'Used / Refurbished'}.get(device, 'Device') }",
+            "tagline": chosen.get("why", "Best fit from the reference catalog."),
+            "total": local_price, "currency": currency,
+            "budget_match": "within-budget" if local_price <= budget else "closest-available",
+            "budget_delta": delta, "performance_fit": min(99, int(chosen.get("performance", 0))),
+            "value_score": min(99, int(chosen.get("value", 0))), "future_score": min(99, int(chosen.get("upgrade_score", 0))),
+            "parts": [{
+                "id": chosen["id"], "category": device, "name": chosen["name"], "brand": chosen.get("brand", ""),
+                "price": local_price, "currency": currency, "performance": chosen.get("performance", 0),
+                "why": chosen.get("why", ""), "offers": [_safe_reference_offer(chosen, currency)],
+                "specs": {k: chosen.get(k) for k in ["condition", "warranty_months"] if k in chosen},
+            }],
+            "reasons": [
+                "Reference fallback used because the live recommendation path was temporarily unavailable.",
+                "The closest product to your budget was selected instead of failing the request.",
+            ],
+            "fps_estimate": fps_estimate(payload, chosen if device == "desktop" else None),
+            "data_mode": "reference-fallback",
+            "nearby_options": nearby,
+            "device_details": {
+                "is_portable_product": device == "laptop", "product_only": device in {"laptop", "prebuilt", "used"},
+                "category": "laptop" if device == "laptop" else device,
+                "specs": {k: chosen.get(k) for k in [
+                    "cpu_model", "gpu_model", "ram_gb", "storage_gb", "storage_type", "display_size",
+                    "display_resolution", "refresh_hz", "weight_kg", "battery_wh", "os", "screen_type", "warranty_months", "condition"
+                ] if chosen.get(k) not in (None, "")},
+            },
+        }
+        result["query"] = {"budget": budget, "currency": currency, "device_type": payload.get("device_type", device), "country": payload.get("country", "US")}
+        result["alternatives"] = [dict(result, alternatives=None)]
+        result["alternatives"][0].pop("alternatives", None)
+        return result
+    # Desktop fallback: deliberately simple and deterministic.
+    parts = []
+    categories = ["cpu", "motherboard", "ram", "gpu", "ssd", "psu", "case"]
+    remaining = usd_budget
+    for cat in categories:
+        pool = catalog_products("desktop", cat)
+        if not pool:
+            continue
+        chosen = min(pool, key=lambda p: float(p.get("usd_price", 0)))
+        if float(chosen.get("usd_price", 0)) <= remaining or not parts:
+            parts.append(chosen); remaining -= float(chosen.get("usd_price", 0))
+    if not parts:
+        raise ValueError("No reference desktop catalog items available.")
+    total_usd = sum(float(p.get("usd_price", 0)) for p in parts)
+    out_parts = [{
+        "id": p["id"], "category": p["category"], "name": p["name"], "brand": p.get("brand", ""),
+        "price": round(local_from_usd(float(p.get("usd_price", 0)), currency), 2), "currency": currency,
+        "performance": p.get("performance", 0), "why": p.get("why", ""), "offers": [_safe_reference_offer(p, currency)],
+        "specs": {k: p.get(k) for k in ["socket", "memory_type", "wattage", "recommended_psu_w"] if k in p},
+    } for p in parts]
+    return {
+        "type": "desktop", "title": "Reference Desktop", "tagline": "A safe reference build from the catalog.",
+        "total": round(local_from_usd(total_usd, currency), 2), "currency": currency,
+        "performance_fit": min(99, round(sum(float(p.get("performance", 0)) for p in parts) / len(parts))),
+        "value_score": min(99, round(sum(float(p.get("value", 0)) for p in parts) / len(parts))),
+        "future_score": min(99, round(sum(float(p.get("upgrade_score", 0)) for p in parts) / len(parts))),
+        "parts": out_parts, "reasons": ["Reference fallback used because the live recommendation path was temporarily unavailable."],
+        "data_mode": "reference-fallback", "alternatives": [],
     }
 
 
@@ -841,7 +1114,11 @@ def handle_500(err):
 
 @app.get("/api/health")
 def health():
-    return jsonify({"ok": True, "service": "BuildYourPC API", "time": datetime.now(timezone.utc).isoformat()})
+    # Keep this endpoint intentionally dependency-free: it is used to wake a sleeping
+    # Render instance before a user submits the heavier recommendation request.
+    response = jsonify({"ok": True, "service": "BuildYourPC API", "time": datetime.now(timezone.utc).isoformat()})
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
 
 
 @app.get("/api/config")
@@ -852,6 +1129,8 @@ def config():
         "languages": CATALOG.get("languages", []), "games": CATALOG.get("games", []),
         "live_price_data": LIVE_PRICE_SYNC_ENABLED and bool(os.getenv("EBAY_CLIENT_ID") or os.getenv("BESTBUY_API_KEY")),
         "live_price_providers": [x for x, ok in [("eBay", bool(os.getenv("EBAY_CLIENT_ID") and os.getenv("EBAY_CLIENT_SECRET"))), ("Best Buy", bool(os.getenv("BESTBUY_API_KEY")))] if ok],
+        "auth": {"enabled": True, "session_days": SESSION_DAYS},
+        "premium": {"available": PREMIUM_AVAILABLE, "launch_phase": "active" if PREMIUM_AVAILABLE else "coming-soon", "features": PREMIUM_FEATURES},
         "live_price_max_age_hours": LIVE_MAX_AGE_HOURS,
         "fx_live": bool(_cached_fx_from_eur()),
         "notes": [
@@ -925,10 +1204,16 @@ def recommend():
         return jsonify({"error": {"code": "BUILD_UNAVAILABLE", "message": str(exc)}}), 422
     except (KeyError, TypeError, IndexError, sqlite3.DatabaseError) as exc:
         logger.exception("recommend data/database error for country=%s currency=%s", payload.get("country"), payload.get("currency"))
-        return jsonify({"error": {"code": "BUILD_DATA_ERROR", "message": "The build catalog could not produce a valid recommendation. Please retry."}}), 500
+        try:
+            base = _reference_fallback_recommendation(payload)
+        except Exception:
+            return jsonify({"error": {"code": "BUILD_DATA_ERROR", "message": "The build catalog could not produce a valid recommendation. Please retry."}}), 500
     except Exception:
         logger.exception("unexpected recommendation failure for country=%s currency=%s device=%s", payload.get("country"), payload.get("currency"), payload.get("device_type"))
-        return jsonify({"error": {"code": "RECOMMENDATION_ERROR", "message": "The recommendation service failed safely. Please retry."}}), 500
+        try:
+            base = _reference_fallback_recommendation(payload)
+        except Exception:
+            return jsonify({"error": {"code": "RECOMMENDATION_ERROR", "message": "The recommendation service failed safely. Please retry."}}), 500
     # Alternative views use the same constraint set but reweight the engine rather than maxing raw FPS blindly.
     # Never allow an optional alternative to turn a successful primary recommendation into a 500.
     if base["type"] == "desktop":
@@ -940,9 +1225,15 @@ def recommend():
             except Exception:
                 logger.exception("optional desktop alternative failed: mode=%s", mode)
         if not alternatives:
-            alternatives = [base]
+            snapshot = {k: v for k, v in base.items() if k != "alternatives"}
+            alternatives = [snapshot]
     else:
-        alternatives = [base]
+        # Keep the primary recommendation and an independent snapshot as the
+        # first alternative. Do NOT put `base` itself inside its `alternatives`
+        # list: that creates a circular reference and Flask/json.dumps returns
+        # HTTP 500 for every non-desktop device (laptop/prebuilt/used).
+        snapshot = {k: v for k, v in base.items() if k != "alternatives"}
+        alternatives = [snapshot]
     base["alternatives"] = alternatives
     base["query"] = {
         "budget": budget, "currency": payload["currency"], "device_type": payload.get("device_type", "not_sure"),
@@ -952,6 +1243,129 @@ def recommend():
     }
     event("recommendation_created", country=payload["country"], meta={"device": base["type"], "budget": budget, "currency": payload["currency"]})
     return jsonify(base)
+
+
+
+@app.get("/api/auth/me")
+def auth_me():
+    user = current_user()
+    return jsonify({"authenticated": bool(user), "user": _public_user(user)})
+
+
+@app.post("/api/auth/register")
+def auth_register():
+    payload = request.get_json(silent=True) or {}
+    email = _clean_email(payload.get("email"))
+    password = str(payload.get("password") or "")
+    display_name = str(payload.get("display_name") or email.split("@")[0] or "Builder").strip()[:60]
+    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+        return jsonify({"error": {"code": "INVALID_EMAIL", "message": "Enter a valid email address."}}), 400
+    if len(password) < 8:
+        return jsonify({"error": {"code": "WEAK_PASSWORD", "message": "Password must be at least 8 characters."}}), 400
+    con = db()
+    try:
+        cur = con.execute(
+            "INSERT INTO users(email,password_hash,display_name) VALUES(?,?,?)",
+            (email, generate_password_hash(password), display_name),
+        )
+        user_id = cur.lastrowid
+        con.commit()
+        row = con.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    except sqlite3.IntegrityError:
+        con.close()
+        return jsonify({"error": {"code": "EMAIL_EXISTS", "message": "An account with this email already exists."}}), 409
+    con.close()
+    token = create_session(user_id)
+    resp = jsonify({"ok": True, "user": _public_user(row)})
+    resp.set_cookie(SESSION_COOKIE, token, max_age=SESSION_DAYS * 86400, httponly=True, secure=request.is_secure, samesite="Lax", path="/")
+    return resp, 201
+
+
+@app.post("/api/auth/login")
+def auth_login():
+    payload = request.get_json(silent=True) or {}
+    email = _clean_email(payload.get("email"))
+    password = str(payload.get("password") or "")
+    con = db()
+    row = con.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
+    con.close()
+    if not row or not check_password_hash(row["password_hash"], password):
+        return jsonify({"error": {"code": "INVALID_LOGIN", "message": "Email or password is incorrect."}}), 401
+    token = create_session(row["id"])
+    resp = jsonify({"ok": True, "user": _public_user(row)})
+    resp.set_cookie(SESSION_COOKIE, token, max_age=SESSION_DAYS * 86400, httponly=True, secure=request.is_secure, samesite="Lax", path="/")
+    return resp
+
+
+@app.post("/api/auth/logout")
+def auth_logout():
+    delete_session(_session_token_from_request())
+    resp = jsonify({"ok": True})
+    resp.delete_cookie(SESSION_COOKIE, path="/")
+    return resp
+
+
+@app.get("/api/account/builds")
+@auth_required
+def account_builds(user):
+    con = db()
+    rows = con.execute(
+        "SELECT id,payload,created_at,views,shares FROM builds WHERE user_id=? ORDER BY created_at DESC LIMIT 50",
+        (user["id"],),
+    ).fetchall()
+    con.close()
+    builds = []
+    for row in rows:
+        try:
+            payload = json.loads(row["payload"])
+        except Exception:
+            payload = {}
+        builds.append({"id": row["id"], "created_at": row["created_at"], "views": row["views"], "shares": row["shares"], "payload": payload})
+    return jsonify({"builds": builds})
+
+
+@app.post("/api/account/favorites")
+@auth_required
+def favorite_build(user):
+    payload = request.get_json(silent=True) or {}
+    build_id = str(payload.get("build_id") or "")
+    if not build_id:
+        return jsonify({"error": {"code": "BUILD_REQUIRED", "message": "Build ID is required."}}), 400
+    con = db()
+    if not con.execute("SELECT 1 FROM builds WHERE id=?", (build_id,)).fetchone():
+        con.close()
+        return jsonify({"error": {"code": "NOT_FOUND", "message": "Build not found."}}), 404
+    con.execute("INSERT OR IGNORE INTO favorites(user_id,build_id) VALUES(?,?)", (user["id"], build_id))
+    con.commit()
+    con.close()
+    return jsonify({"ok": True})
+
+
+@app.get("/api/account/favorites")
+@auth_required
+def get_favorites(user):
+    con = db()
+    rows = con.execute("SELECT build_id,created_at FROM favorites WHERE user_id=? ORDER BY created_at DESC", (user["id"],)).fetchall()
+    con.close()
+    return jsonify({"favorites": [dict(r) for r in rows]})
+
+
+@app.get("/api/premium/status")
+def premium_status():
+    user = current_user()
+    return jsonify({
+        "available": PREMIUM_AVAILABLE,
+        "authenticated": bool(user),
+        "premium_active": bool(user and _public_user(user)["premium_active"]),
+        "features": PREMIUM_FEATURES,
+    })
+
+
+@app.get("/api/premium/feature/<feature>")
+@auth_required
+@premium_required
+def premium_feature(user, feature):
+    return jsonify({"ok": True, "feature": feature, "status": "enabled"})
 
 
 @app.post("/api/builds")
@@ -969,8 +1383,12 @@ def save_build():
         except (ValueError, TypeError):
             return jsonify({"error": {"code": "INVALID_BUILD", "message": "Build currency or budget is invalid."}}), 400
     build_id = secrets.token_urlsafe(8).replace("-", "").replace("_", "")[:12]
+    user = current_user()
     con = db()
-    con.execute("INSERT INTO builds (id, payload) VALUES (?, ?)", (build_id, json.dumps(payload)))
+    con.execute(
+        "INSERT INTO builds (id, payload, user_id) VALUES (?, ?, ?)",
+        (build_id, json.dumps(payload), user["id"] if user else None),
+    )
     con.commit(); con.close()
     event("build_saved", build_id=build_id, country=payload.get("query", {}).get("country"))
     return jsonify({"id": build_id, "url": f"/build/{build_id}"})

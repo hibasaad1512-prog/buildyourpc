@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/styles.css?v=7">
 </head>
 <body>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -32,6 +32,7 @@
     <button class="icon-btn" id="countryBtn" aria-haspopup="dialog" aria-label="Change country">🌎 <span id="countryLabel">US</span></button>
     <button class="icon-btn" id="langBtn" aria-haspopup="dialog" aria-label="Change language">EN</button>
     <a class="tip-btn" href="https://ko-fi.com/simbawwyy00" target="_blank" rel="noopener">☕ <span>Leave a Tip</span></a>
+    <button class="account-btn" id="accountBtn" aria-haspopup="dialog">◯ <span id="accountLabel">Sign in</span></button>
     <button class="mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
   </div>
 </header>
@@ -168,6 +169,22 @@
     </div>
   </section>
 
+  <section class="section shell premium-section" id="premium">
+    <div class="premium-card reveal">
+      <div>
+        <span class="section-kicker">BUILDYOURPC PREMIUM</span>
+        <h2>Build smarter. <em>Keep more control.</em></h2>
+        <p>Free stays powerful. Premium is designed for the people who want price tracking, deeper insights and a personal build library.</p>
+      </div>
+      <div class="premium-grid">
+        <div><span>💸</span><strong>Advanced price tracking</strong><small>Track offers and price drops without checking every store yourself.</small></div>
+        <div><span>🧠</span><strong>Deeper build insights</strong><small>More detailed compatibility, upgrade and value analysis.</small></div>
+        <div><span>📚</span><strong>Your build library</strong><small>Keep your builds, favorites and future upgrade plans together.</small></div>
+      </div>
+      <div class="premium-bottom"><span id="premiumStatusText">Premium is coming later. Free tools stay available now.</span><button class="ghost-btn" id="premiumBtn">See Premium</button></div>
+    </div>
+  </section>
+
   <section class="section shell tip-section">
     <div class="tip-large reveal"><div><span class="section-kicker">KEEP IT FREE</span><h2>Built to help you spend smarter.</h2><p>We want BuildYourPC to stay useful before it ever needs to be profitable.</p></div><a class="primary-btn" href="https://ko-fi.com/simbawwyy00" target="_blank" rel="noopener">☕ Leave a Tip <span>→</span></a></div>
   </section>
@@ -179,6 +196,37 @@
 <div class="language-dock" id="languageDock" hidden><div class="dock-head"><div><span class="section-kicker">LANGUAGE</span><h3>Speak your way.</h3></div><button class="close-dock" data-close>✕</button></div><input class="dock-search" id="langSearch" placeholder="Search language..."><div id="langList" class="dock-list"></div></div>
 <div class="country-dock" id="countryDock" hidden><div class="dock-head"><div><span class="section-kicker">MARKET</span><h3>Where are we shopping?</h3></div><button class="close-dock" data-close>✕</button></div><input class="dock-search" id="countrySearch" placeholder="Search country..."><div id="countryList" class="dock-list"></div></div>
 
-<script src="/config.js"></script><script src="/app.js"></script>
+<div class="auth-modal" id="authModal" hidden>
+  <div class="auth-card">
+    <button class="close-dock auth-close" data-auth-close>✕</button>
+    <div id="authLoggedOut">
+      <span class="section-kicker">YOUR BUILDYOURPC ACCOUNT</span>
+      <h3 id="authTitle">Save your builds. Keep your progress.</h3>
+      <p id="authSubtitle">Create a free account to keep your builds and favorites in one place.</p>
+      <div class="auth-tabs"><button class="auth-tab active" data-auth-mode="login">Sign in</button><button class="auth-tab" data-auth-mode="register">Create account</button></div>
+      <form id="authForm" class="auth-form">
+        <label><span>Email</span><input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com"></label>
+        <label id="authNameRow" hidden><span>Display name</span><input id="authName" type="text" autocomplete="name" maxlength="60" placeholder="Your name"></label>
+        <label><span>Password</span><input id="authPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="8+ characters"></label>
+        <button class="primary-btn" type="submit" id="authSubmit">Sign in <span>→</span></button>
+        <small class="auth-note">Your password is securely hashed on the server. We never display it back to you.</small>
+      </form>
+      <div id="authError" class="auth-error" hidden></div>
+    </div>
+    <div id="authLoggedIn" hidden>
+      <span class="section-kicker">YOUR ACCOUNT</span>
+      <h3 id="accountWelcome">Welcome back.</h3>
+      <div class="account-plan"><span id="accountPlan">FREE</span><strong id="accountEmail">—</strong></div>
+      <div class="account-actions">
+        <button class="ghost-btn" id="viewAccountBuilds">My saved builds</button>
+        <button class="ghost-btn" id="accountPremium">Premium</button>
+        <button class="ghost-btn" id="logoutBtn">Sign out</button>
+      </div>
+      <div id="accountContent" class="account-content"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/config.js?v=7"></script><script src="/app.js?v=7"></script>
 </body>
 </html>

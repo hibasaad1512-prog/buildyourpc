@@ -42,3 +42,33 @@ html,body{max-width:100%;overflow-x:hidden}
 .laptop-spec{display:flex;justify-content:space-between;gap:10px;padding:8px 9px;border:1px solid var(--line);background:rgba(255,255,255,.025);border-radius:10px;font-size:9px;color:#7f7885}
 .laptop-spec strong{color:#d8d2df;font-size:9px;text-align:right;overflow-wrap:anywhere}
 @media(max-width:700px){.laptop-spec-grid{grid-template-columns:1fr}}
+
+.nearby-options{margin:22px 0;padding:18px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:rgba(255,255,255,.02)}
+.nearby-head{display:flex;justify-content:space-between;gap:18px;align-items:baseline;margin-bottom:14px}.nearby-head strong{font-size:15px}.nearby-head span{font-size:12px;color:var(--muted)}
+.nearby-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.nearby-card{padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);display:flex;flex-direction:column;gap:6px}.nearby-card strong{font-size:14px}.nearby-card span{font-size:16px;font-weight:800}.nearby-card small{color:var(--muted);line-height:1.4}
+@media (max-width:700px){.nearby-head{display:block}.nearby-head span{display:block;margin-top:5px}.nearby-grid{grid-template-columns:1fr}.nearby-card{min-width:0}.wizard-actions .primary-btn{min-width:0}.toast{left:16px;right:16px;width:auto;max-width:none}}
+
+/* v8 mobile resilience: never truncate game choices and keep dock lists usable on phones. */
+@media(max-width:700px){.tag-cloud{gap:7px}.tag{font-size:10px;padding:8px 10px}.dock-list{grid-template-columns:1fr;max-height:58vh}.language-dock,.country-dock{top:66px;right:8px;left:8px;width:auto;padding:14px;border-radius:20px}.dock-item{padding:10px 12px}.dock-search{margin:12px 0 9px}.mini-panel{padding:14px}}
+
+
+/* Account + Premium */
+.account-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.035);color:#eee8f6;font-size:12px;font-weight:800;transition:.2s ease}
+.account-btn:hover,.account-btn.signed-in{border-color:rgba(155,92,255,.36);background:rgba(155,92,255,.10);transform:translateY(-1px)}
+.account-btn.signed-in:before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 12px rgba(112,240,176,.7)}
+.premium-section{padding-top:10px}
+.premium-card{border:1px solid rgba(155,92,255,.23);border-radius:30px;padding:34px;background:radial-gradient(500px 240px at 85% 20%,rgba(155,92,255,.14),transparent 70%),linear-gradient(145deg,#15121e,#0d0d12);box-shadow:var(--shadow)}
+.premium-card h2{font-family:Manrope;font-size:clamp(32px,4vw,52px);line-height:1;letter-spacing:-.05em;margin:10px 0 12px}.premium-card h2 em{font-style:normal;color:#b78cff}.premium-card>div:first-child>p{max-width:680px;color:#a9a3b1;font-size:14px}
+.premium-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:28px}
+.premium-grid>div{padding:18px;border:1px solid rgba(255,255,255,.07);border-radius:18px;background:rgba(255,255,255,.025)}
+.premium-grid span{font-size:24px;display:block;margin-bottom:12px}.premium-grid strong{display:block;font-size:13px}.premium-grid small{display:block;color:#898391;font-size:11px;line-height:1.6;margin-top:5px}
+.premium-bottom{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.07)}.premium-bottom>span{color:#8e8995;font-size:12px}
+.auth-modal{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(4,4,7,.70);backdrop-filter:blur(18px)}.auth-modal[hidden]{display:none}
+.auth-card{width:min(520px,100%);background:linear-gradient(160deg,#191620,#0f0f14);border:1px solid rgba(255,255,255,.10);border-radius:28px;padding:30px;box-shadow:0 40px 100px rgba(0,0,0,.55);position:relative;max-height:min(760px,calc(100vh - 30px));overflow:auto}
+.auth-card h3{font-family:Manrope;font-size:28px;letter-spacing:-.04em;line-height:1.08;margin:10px 0}.auth-card>div>p{color:#98929f;font-size:13px;margin:0 0 18px}
+.auth-close{position:absolute;right:18px;top:18px}.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:4px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);border-radius:14px;margin:18px 0}.auth-tab{border:0;background:transparent;color:#918b99;padding:10px;border-radius:10px;font-weight:800}.auth-tab.active{background:rgba(155,92,255,.13);color:#f3ecff}
+.auth-form{display:grid;gap:13px}.auth-form label{display:grid;gap:6px}.auth-form label span{font-size:11px;color:#a9a3b1;font-weight:700}.auth-form input{width:100%;background:#0b0b10;border:1px solid rgba(255,255,255,.09);color:#fff;padding:12px 13px;border-radius:12px;outline:none}.auth-form input:focus{border-color:rgba(155,92,255,.55);box-shadow:0 0 0 4px rgba(155,92,255,.09)}.auth-note{color:#716c79;font-size:10px}.auth-error{margin-top:12px;padding:10px 12px;border-radius:10px;background:rgba(255,111,142,.10);border:1px solid rgba(255,111,142,.20);color:#ff9bb0;font-size:12px}
+.account-plan{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;margin:18px 0;border-radius:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07)}.account-plan span{font-size:10px;font-weight:900;letter-spacing:.12em;color:#bfaef0}.account-plan span.premium{color:#79f1bd}.account-plan strong{font-size:12px;color:#d7d1dc}
+.account-actions{display:flex;gap:8px;flex-wrap:wrap}.account-actions .ghost-btn{padding:10px 12px;font-size:12px}.account-content{margin-top:16px;display:grid;gap:8px}.saved-build-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}.saved-build-row:hover{border-color:rgba(155,92,255,.28);background:rgba(155,92,255,.05)}.saved-build-row strong{display:block;font-size:12px}.saved-build-row small{display:block;color:#77717e;font-size:10px;margin-top:2px}.saved-build-row>span{font-size:11px;color:#bfaef0;white-space:nowrap}.account-empty,.account-loading{padding:16px;color:#85808c;font-size:12px;border:1px dashed rgba(255,255,255,.08);border-radius:14px}
+.modal-open{overflow:hidden}
+@media(max-width:760px){.account-btn span{display:none}.premium-grid{grid-template-columns:1fr}.premium-bottom{align-items:flex-start;flex-direction:column}.premium-bottom .ghost-btn{width:100%;justify-content:center}.auth-card{padding:24px}.account-actions .ghost-btn{flex:1 1 30%}}

@@ -79,3 +79,27 @@ Render start command:
 ```bash
 gunicorn backend.app:app
 ```
+
+
+## Accounts & Premium foundation
+
+The site now includes a first-party account system built on SQLite:
+
+- Email + password registration/login with server-side password hashing.
+- Secure HTTP-only session cookie with configurable lifetime (`SESSION_DAYS`, default 30).
+- Logged-in users automatically associate newly saved builds with their account.
+- Account modal with saved-build history and favorites API.
+- Premium feature gating is implemented as a launch-safe feature flag.
+- `PREMIUM_AVAILABLE=0` keeps Premium in coming-soon mode; set it to `1` only when billing/entitlements are ready.
+- Premium access is never granted just because the client claims it is enabled; the server checks the account entitlement.
+
+Auth endpoints:
+`GET /api/auth/me`, `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`.
+
+Account endpoints:
+`GET /api/account/builds`, `GET /api/account/favorites`, `POST /api/account/favorites`.
+
+Premium endpoints:
+`GET /api/premium/status`, `GET /api/premium/feature/<feature>`.
+
+For production, keep the frontend/API same-origin where possible. If deploying the frontend separately, configure `CORS_ORIGINS` with the exact trusted origin(s) and keep HTTPS enabled.
