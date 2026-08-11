@@ -5,16 +5,12 @@ import io
 import logging
 import json
 import os
-import re
 import secrets
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote_plus
-from functools import wraps
-
-from werkzeug.security import generate_password_hash, check_password_hash
 
 import requests
 
@@ -34,7 +30,7 @@ app = Flask(__name__, static_folder=str(ROOT / "frontend"), static_url_path="")
 logger = logging.getLogger(__name__)
 app.config["JSON_SORT_KEYS"] = False
 ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "*")
-CORS(app, resources={r"/api/*": {"origins": [x.strip() for x in ALLOWED_ORIGINS.split(",")] if ALLOWED_ORIGINS != "*" else "*", "supports_credentials": True}})
+CORS(app, resources={r"/api/*": {"origins": [x.strip() for x in ALLOWED_ORIGINS.split(",")] if ALLOWED_ORIGINS != "*" else "*"}})
 
 with CATALOG_PATH.open("r", encoding="utf-8") as f:
     CATALOG = json.load(f)
@@ -73,38 +69,8 @@ def init_db() -> None:
             payload TEXT NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             views INTEGER NOT NULL DEFAULT 0,
-            shares INTEGER NOT NULL DEFAULT 0,
-            user_id INTEGER
+            shares INTEGER NOT NULL DEFAULT 0
         );
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            display_name TEXT NOT NULL,
-            plan TEXT NOT NULL DEFAULT 'free' CHECK(plan IN ('free','premium')),
-            premium_until TEXT,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS auth_sessions (
-            token TEXT PRIMARY KEY,
-            user_id INTEGER NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            expires_at TEXT NOT NULL,
-            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_auth_sessions_user ON auth_sessions(user_id);
-        CREATE INDEX IF NOT EXISTS idx_auth_sessions_expiry ON auth_sessions(expires_at);
-
-        CREATE TABLE IF NOT EXISTS favorites (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            build_id TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(user_id, build_id),
-            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);
         CREATE TABLE IF NOT EXISTS prices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_id TEXT NOT NULL,
@@ -162,122 +128,11 @@ def init_db() -> None:
         con.execute("PRAGMA synchronous=NORMAL")
     except sqlite3.DatabaseError:
         logger.warning("SQLite WAL mode could not be enabled; continuing with the configured journal mode.")
-    # Lightweight migration for databases created before account support.
-    try:
-        cols = {row[1] for row in con.execute("PRAGMA table_info(builds)").fetchall()}
-        if "user_id" not in cols:
-            con.execute("ALTER TABLE builds ADD COLUMN user_id INTEGER")
-        con.execute("CREATE INDEX IF NOT EXISTS idx_builds_user_id ON builds(user_id)")
-    except sqlite3.DatabaseError:
-        logger.exception("Could not migrate builds table")
     con.commit()
     con.close()
 
 
 init_db()
-
-SESSION_COOKIE = "byp_session"
-SESSION_DAYS = int(os.getenv("SESSION_DAYS", "30"))
-PREMIUM_AVAILABLE = os.getenv("PREMIUM_AVAILABLE", "0") == "1"
-PREMIUM_FEATURES = [
-    "Advanced price tracking",
-    "Build history",
-    "Upgrade planner",
-    "Advanced compatibility insights",
-    "Premium deal ranking",
-]
-
-
-def _iso_after_days(days: int) -> str:
-    from datetime import timedelta
-    return (datetime.now(timezone.utc) + timedelta(days=days)).isoformat()
-
-
-def _clean_email(value: Any) -> str:
-    return str(value or "").strip().lower()
-
-
-def _public_user(row: sqlite3.Row | None) -> dict[str, Any] | None:
-    if not row:
-        return None
-    premium_until = row["premium_until"]
-    now = datetime.now(timezone.utc).isoformat()
-    active = row["plan"] == "premium" and bool(premium_until and premium_until > now)
-    return {
-        "id": row["id"],
-        "email": row["email"],
-        "display_name": row["display_name"],
-        "plan": "premium" if active else "free",
-        "premium_active": active,
-        "premium_until": premium_until,
-        "created_at": row["created_at"],
-    }
-
-
-def _session_token_from_request() -> str | None:
-    token = request.cookies.get(SESSION_COOKIE)
-    if token:
-        return token
-    auth = request.headers.get("Authorization", "")
-    if auth.lower().startswith("bearer "):
-        return auth[7:].strip() or None
-    return None
-
-
-def current_user() -> sqlite3.Row | None:
-    token = _session_token_from_request()
-    if not token:
-        return None
-    con = db()
-    row = con.execute(
-        """SELECT u.* FROM auth_sessions s
-           JOIN users u ON u.id=s.user_id
-           WHERE s.token=? AND s.expires_at>?""",
-        (token, datetime.now(timezone.utc).isoformat()),
-    ).fetchone()
-    con.close()
-    return row
-
-
-def create_session(user_id: int) -> str:
-    token = secrets.token_urlsafe(32)
-    con = db()
-    con.execute(
-        "INSERT INTO auth_sessions(token,user_id,expires_at) VALUES(?,?,?)",
-        (token, user_id, _iso_after_days(SESSION_DAYS)),
-    )
-    con.commit()
-    con.close()
-    return token
-
-
-def delete_session(token: str | None) -> None:
-    if not token:
-        return
-    con = db()
-    con.execute("DELETE FROM auth_sessions WHERE token=?", (token,))
-    con.commit()
-    con.close()
-
-
-def auth_required(fn):
-    @wraps(fn)
-    def wrapped(*args, **kwargs):
-        user = current_user()
-        if not user:
-            return jsonify({"error": {"code": "AUTH_REQUIRED", "message": "Please sign in to continue."}}), 401
-        return fn(user, *args, **kwargs)
-    return wrapped
-
-
-def premium_required(fn):
-    @wraps(fn)
-    def wrapped(user, *args, **kwargs):
-        public = _public_user(user)
-        if not public or not public["premium_active"]:
-            return jsonify({"error": {"code": "PREMIUM_REQUIRED", "message": "This feature is reserved for BuildYourPC Premium."}}), 403
-        return fn(user, *args, **kwargs)
-    return wrapped
 
 
 def _cached_fx_from_eur() -> dict[str, float]:
@@ -786,6 +641,49 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
     if need.get("existing_parts"):
         reasons.append("Existing compatible parts are excluded from the shopping list to preserve your budget.")
 
+    # Build-quality metadata for the richer results experience.
+    # Keep this server-side so the UI cannot accidentally overstate compatibility or value.
+    def build_scores(parts_map: dict[str, dict[str, Any]], total_usd: float) -> dict[str, int]:
+        vals = [float(x.get("value", 0)) for x in parts_map.values()]
+        perfs = [float(x.get("performance", 0)) for x in parts_map.values()]
+        upgrades = [float(x.get("upgrade_score", 50)) for x in parts_map.values()]
+        compatibility = 100
+        if parts_map.get("cpu") and parts_map.get("motherboard") and parts_map["cpu"].get("socket") != parts_map["motherboard"].get("socket"):
+            compatibility -= 45
+        if parts_map.get("ram") and parts_map.get("motherboard") and parts_map["ram"].get("memory_type") != parts_map["motherboard"].get("memory_type"):
+            compatibility -= 35
+        if parts_map.get("gpu") and parts_map.get("psu") and float(parts_map["psu"].get("wattage", 0)) < float(parts_map["gpu"].get("recommended_psu_w", 0)):
+            compatibility -= 30
+        performance = round(sum(perfs) / max(1, len(perfs)))
+        value_score = round(sum(vals) / max(1, len(vals)))
+        upgrade = round(sum(upgrades) / max(1, len(upgrades)))
+        budget_fit = 100 if total_usd <= usd_budget else max(0, round(100 - ((total_usd-usd_budget)/max(1,usd_budget))*100))
+        overall = round(performance*0.28 + value_score*0.27 + compatibility*0.30 + upgrade*0.10 + budget_fit*0.05)
+        return {"overall": min(100,max(0,overall)), "performance": min(100,max(0,performance)), "value": min(100,max(0,value_score)), "compatibility": min(100,max(0,compatibility)), "upgradeability": min(100,max(0,upgrade)), "budget_fit": min(100,max(0,budget_fit))}
+
+    def cheaper_alternatives(parts_map: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+        out=[]
+        for cat, current in parts_map.items():
+            pool = candidates.get(cat, []) or []
+            for alt in sorted(pool, key=lambda x: float(x.get("usd_price", 999999))):
+                if alt.get("id") == current.get("id") or float(alt.get("usd_price", 999999)) >= float(current.get("usd_price", 999999)):
+                    continue
+                if cat == "cpu" and parts_map.get("motherboard") and alt.get("socket") != parts_map["motherboard"].get("socket"): continue
+                if cat == "motherboard" and parts_map.get("cpu") and alt.get("socket") != parts_map["cpu"].get("socket"): continue
+                if cat == "ram" and parts_map.get("motherboard") and alt.get("memory_type") != parts_map["motherboard"].get("memory_type"): continue
+                if cat == "psu" and parts_map.get("gpu") and float(alt.get("wattage",0)) < float(parts_map["gpu"].get("recommended_psu_w",0)): continue
+                out.append({"category":cat,"id":alt.get("id"),"name":alt.get("name"),"price":round(local_from_usd(float(alt.get("usd_price",0)), need.get("currency","USD")),2),"currency":need.get("currency","USD"),"savings":round(local_from_usd(float(current.get("usd_price",0))-float(alt.get("usd_price",0)), need.get("currency","USD")),2),"why":f"Save money on {cat} while keeping the basic compatibility rules intact."})
+                break
+        return out[:4]
+
+    score_pack = build_scores(parts, total)
+    alternatives = cheaper_alternatives(parts)
+    build_reasons = [
+        "We stopped spending once the main goal was sufficiently covered.",
+        f"{score_pack['compatibility']}% compatibility confidence based on the engine checks used for this build.",
+        "Cheaper swaps are shown separately so the recommended build stays intact.",
+    ]
+
     result_parts = []
     for p in selected:
         result_parts.append(
@@ -808,7 +706,10 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
         "total": round(local_from_usd(total, need.get("currency", "USD")), 2),
         "currency": need.get("currency", "USD"), "performance_fit": min(99, performance),
         "value_score": min(99, value), "future_score": min(99, round(value * 0.72 + performance * 0.28)),
-        "parts": result_parts, "reasons": reasons, "fps_estimate": estimate,
+        "parts": result_parts, "reasons": reasons, "build_score": score_pack,
+        "build_reasons": build_reasons, "cheaper_alternatives": alternatives,
+        "price_hunt": {"offers_count": sum(len(p["offers"]) for p in result_parts), "live_count": sum(sum(1 for o in p["offers"] if o.get("live")) for p in result_parts), "stores_count": len({o.get("store") for p in result_parts for o in p["offers"]}), "total": round(local_from_usd(total, need.get("currency","USD")),2)},
+        "fps_estimate": estimate,
         "data_mode": "reference-demo" if not any(o.get("source") != "reference-demo" for p in result_parts for o in p["offers"]) else "live-plus-reference",
     }
 
@@ -1129,8 +1030,6 @@ def config():
         "languages": CATALOG.get("languages", []), "games": CATALOG.get("games", []),
         "live_price_data": LIVE_PRICE_SYNC_ENABLED and bool(os.getenv("EBAY_CLIENT_ID") or os.getenv("BESTBUY_API_KEY")),
         "live_price_providers": [x for x, ok in [("eBay", bool(os.getenv("EBAY_CLIENT_ID") and os.getenv("EBAY_CLIENT_SECRET"))), ("Best Buy", bool(os.getenv("BESTBUY_API_KEY")))] if ok],
-        "auth": {"enabled": True, "session_days": SESSION_DAYS},
-        "premium": {"available": PREMIUM_AVAILABLE, "launch_phase": "active" if PREMIUM_AVAILABLE else "coming-soon", "features": PREMIUM_FEATURES},
         "live_price_max_age_hours": LIVE_MAX_AGE_HOURS,
         "fx_live": bool(_cached_fx_from_eur()),
         "notes": [
@@ -1245,129 +1144,6 @@ def recommend():
     return jsonify(base)
 
 
-
-@app.get("/api/auth/me")
-def auth_me():
-    user = current_user()
-    return jsonify({"authenticated": bool(user), "user": _public_user(user)})
-
-
-@app.post("/api/auth/register")
-def auth_register():
-    payload = request.get_json(silent=True) or {}
-    email = _clean_email(payload.get("email"))
-    password = str(payload.get("password") or "")
-    display_name = str(payload.get("display_name") or email.split("@")[0] or "Builder").strip()[:60]
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
-        return jsonify({"error": {"code": "INVALID_EMAIL", "message": "Enter a valid email address."}}), 400
-    if len(password) < 8:
-        return jsonify({"error": {"code": "WEAK_PASSWORD", "message": "Password must be at least 8 characters."}}), 400
-    con = db()
-    try:
-        cur = con.execute(
-            "INSERT INTO users(email,password_hash,display_name) VALUES(?,?,?)",
-            (email, generate_password_hash(password), display_name),
-        )
-        user_id = cur.lastrowid
-        con.commit()
-        row = con.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
-    except sqlite3.IntegrityError:
-        con.close()
-        return jsonify({"error": {"code": "EMAIL_EXISTS", "message": "An account with this email already exists."}}), 409
-    con.close()
-    token = create_session(user_id)
-    resp = jsonify({"ok": True, "user": _public_user(row)})
-    resp.set_cookie(SESSION_COOKIE, token, max_age=SESSION_DAYS * 86400, httponly=True, secure=request.is_secure, samesite="Lax", path="/")
-    return resp, 201
-
-
-@app.post("/api/auth/login")
-def auth_login():
-    payload = request.get_json(silent=True) or {}
-    email = _clean_email(payload.get("email"))
-    password = str(payload.get("password") or "")
-    con = db()
-    row = con.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
-    con.close()
-    if not row or not check_password_hash(row["password_hash"], password):
-        return jsonify({"error": {"code": "INVALID_LOGIN", "message": "Email or password is incorrect."}}), 401
-    token = create_session(row["id"])
-    resp = jsonify({"ok": True, "user": _public_user(row)})
-    resp.set_cookie(SESSION_COOKIE, token, max_age=SESSION_DAYS * 86400, httponly=True, secure=request.is_secure, samesite="Lax", path="/")
-    return resp
-
-
-@app.post("/api/auth/logout")
-def auth_logout():
-    delete_session(_session_token_from_request())
-    resp = jsonify({"ok": True})
-    resp.delete_cookie(SESSION_COOKIE, path="/")
-    return resp
-
-
-@app.get("/api/account/builds")
-@auth_required
-def account_builds(user):
-    con = db()
-    rows = con.execute(
-        "SELECT id,payload,created_at,views,shares FROM builds WHERE user_id=? ORDER BY created_at DESC LIMIT 50",
-        (user["id"],),
-    ).fetchall()
-    con.close()
-    builds = []
-    for row in rows:
-        try:
-            payload = json.loads(row["payload"])
-        except Exception:
-            payload = {}
-        builds.append({"id": row["id"], "created_at": row["created_at"], "views": row["views"], "shares": row["shares"], "payload": payload})
-    return jsonify({"builds": builds})
-
-
-@app.post("/api/account/favorites")
-@auth_required
-def favorite_build(user):
-    payload = request.get_json(silent=True) or {}
-    build_id = str(payload.get("build_id") or "")
-    if not build_id:
-        return jsonify({"error": {"code": "BUILD_REQUIRED", "message": "Build ID is required."}}), 400
-    con = db()
-    if not con.execute("SELECT 1 FROM builds WHERE id=?", (build_id,)).fetchone():
-        con.close()
-        return jsonify({"error": {"code": "NOT_FOUND", "message": "Build not found."}}), 404
-    con.execute("INSERT OR IGNORE INTO favorites(user_id,build_id) VALUES(?,?)", (user["id"], build_id))
-    con.commit()
-    con.close()
-    return jsonify({"ok": True})
-
-
-@app.get("/api/account/favorites")
-@auth_required
-def get_favorites(user):
-    con = db()
-    rows = con.execute("SELECT build_id,created_at FROM favorites WHERE user_id=? ORDER BY created_at DESC", (user["id"],)).fetchall()
-    con.close()
-    return jsonify({"favorites": [dict(r) for r in rows]})
-
-
-@app.get("/api/premium/status")
-def premium_status():
-    user = current_user()
-    return jsonify({
-        "available": PREMIUM_AVAILABLE,
-        "authenticated": bool(user),
-        "premium_active": bool(user and _public_user(user)["premium_active"]),
-        "features": PREMIUM_FEATURES,
-    })
-
-
-@app.get("/api/premium/feature/<feature>")
-@auth_required
-@premium_required
-def premium_feature(user, feature):
-    return jsonify({"ok": True, "feature": feature, "status": "enabled"})
-
-
 @app.post("/api/builds")
 def save_build():
     payload = request.get_json(silent=True) or {}
@@ -1383,12 +1159,8 @@ def save_build():
         except (ValueError, TypeError):
             return jsonify({"error": {"code": "INVALID_BUILD", "message": "Build currency or budget is invalid."}}), 400
     build_id = secrets.token_urlsafe(8).replace("-", "").replace("_", "")[:12]
-    user = current_user()
     con = db()
-    con.execute(
-        "INSERT INTO builds (id, payload, user_id) VALUES (?, ?, ?)",
-        (build_id, json.dumps(payload), user["id"] if user else None),
-    )
+    con.execute("INSERT INTO builds (id, payload) VALUES (?, ?)", (build_id, json.dumps(payload)))
     con.commit(); con.close()
     event("build_saved", build_id=build_id, country=payload.get("query", {}).get("country"))
     return jsonify({"id": build_id, "url": f"/build/{build_id}"})

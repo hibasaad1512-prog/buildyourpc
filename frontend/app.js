@@ -15,10 +15,7 @@ const state = {
   target_fps: null,
   resolution: null,
   result: null,
-  preset: 'smart',
-  user: null,
-  authMode: 'login',
-  premium: null
+  preset: 'smart'
 };
 
 const el = (id) => document.getElementById(id);
@@ -148,9 +145,9 @@ Object.entries(CORE_COMMON_EXTRA).forEach(([locale,extra])=>{ CORE_COMMON[locale
 
 
 const GLOBAL_UI_FALLBACK={
-  en:{openMenu:'Open menu',bestValue:'BEST VALUE',build:'BUILD',sharedBuild:'Shared build',referenceBuild:'Reference build',reasonOffers:'Available shops and marketplaces are added for your market.',noExactMatch:'No exact match at this budget',closestAvailable:'Closest available option',budgetDelta:'Approx. budget difference',budgetMatchWithin:'Within your budget',budgetMatchClosest:'Closest available option to your budget.'},
+  en:{priceHunt:'PRICE HUNT',bestDeal:'Best deal',searchAllStores:'Search all stores',liveOffers:'live offers',stores:'stores',buildScore:'BUILD SCORE',performance:'Performance',compatibility:'Compatibility',upgradeability:'Upgradeability',budgetFit:'Budget fit',whyBuild:'WHY THIS BUILD',saveMoney:'SAVE MONEY',compatibleSwap:'Compatible lower-cost swap',saves:'save',overall:'Overall',openMenu:'Open menu',bestValue:'BEST VALUE',build:'BUILD',sharedBuild:'Shared build',referenceBuild:'Reference build',reasonOffers:'Available shops and marketplaces are added for your market.',noExactMatch:'No exact match at this budget',closestAvailable:'Closest available option',budgetDelta:'Approx. budget difference',budgetMatchWithin:'Within your budget',budgetMatchClosest:'Closest available option to your budget.'},
   fr:{openMenu:'Ouvrir le menu',bestValue:'MEILLEUR RAPPORT',build:'CONFIG',sharedBuild:'Configuration partagée',referenceBuild:'Configuration de référence',reasonOffers:'Les magasins et marketplaces disponibles sont ajoutés pour votre marché.',noExactMatch:'Aucune correspondance exacte pour ce budget',closestAvailable:'Option la plus proche disponible',budgetDelta:'Écart de budget approximatif',budgetMatchWithin:'Dans votre budget',budgetMatchClosest:'Option disponible la plus proche de votre budget.'},
-  ar:{openMenu:'فتح القائمة',bestValue:'أفضل قيمة',build:'تجميعة',sharedBuild:'تجميعة مشتركة',referenceBuild:'تجميعة مرجعية',reasonOffers:'تتم إضافة المتاجر والأسواق المتاحة في سوقك.',noExactMatch:'لا توجد مطابقة تامة بهذه الميزانية',closestAvailable:'أقرب خيار متاح',budgetDelta:'فرق الميزانية التقريبي',budgetMatchWithin:'ضمن ميزانيتك',budgetMatchClosest:'تم اختيار أقرب خيار متاح لميزانيتك.'},
+  ar:{priceHunt:'اصطياد السعر',bestDeal:'أفضل سعر',searchAllStores:'البحث في كل المتاجر',liveOffers:'عروض حية',stores:'متاجر',buildScore:'تقييم التجميعة',performance:'الأداء',compatibility:'التوافق',upgradeability:'قابلية الترقية',budgetFit:'ملاءمة الميزانية',whyBuild:'لماذا هذه التجميعة؟',saveMoney:'وفّر أكثر',compatibleSwap:'بديل أرخص ومتوافق',saves:'توفير',overall:'التقييم العام',openMenu:'فتح القائمة',bestValue:'أفضل قيمة',build:'تجميعة',sharedBuild:'تجميعة مشتركة',referenceBuild:'تجميعة مرجعية',reasonOffers:'تتم إضافة المتاجر والأسواق المتاحة في سوقك.',noExactMatch:'لا توجد مطابقة تامة بهذه الميزانية',closestAvailable:'أقرب خيار متاح',budgetDelta:'فرق الميزانية التقريبي',budgetMatchWithin:'ضمن ميزانيتك',budgetMatchClosest:'تم اختيار أقرب خيار متاح لميزانيتك.'},
   es:{openMenu:'Abrir menú',bestValue:'MEJOR VALOR',build:'CONFIG',sharedBuild:'Configuración compartida',referenceBuild:'Configuración de referencia',reasonOffers:'Se añaden las tiendas y marketplaces disponibles para tu mercado.',noExactMatch:'No hay una coincidencia exacta con este presupuesto',closestAvailable:'Opción disponible más cercana',budgetDelta:'Diferencia presupuestaria aproximada',budgetMatchWithin:'Dentro de tu presupuesto',budgetMatchClosest:'Se eligió la opción disponible más cercana a tu presupuesto.'},
   de:{openMenu:'Menü öffnen',noExactMatch:'Keine exakte Übereinstimmung für dieses Budget',closestAvailable:'Nächstbeste verfügbare Option',budgetDelta:'Ungefährer Budgetunterschied',budgetMatchWithin:'Innerhalb deines Budgets',budgetMatchClosest:'Die nächstgelegene verfügbare Option zu deinem Budget wurde gewählt.'},
   it:{openMenu:'Apri menu',noExactMatch:'Nessuna corrispondenza esatta con questo budget',closestAvailable:'Opzione disponibile più vicina',budgetDelta:'Differenza di budget approssimativa',budgetMatchWithin:'Nel tuo budget',budgetMatchClosest:'È stata scelta l’opzione disponibile più vicina al tuo budget.'},
@@ -253,7 +250,7 @@ async function apiFetch(path, options={}){
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),timeoutMs);
     try{
-      const r=await fetch(API_BASE+path,{...fetchOptions,credentials:'include',signal:controller.signal,headers:{Accept:'application/json',...(fetchOptions.headers||{})}});
+      const r=await fetch(API_BASE+path,{...fetchOptions,signal:controller.signal,headers:{Accept:'application/json',...(fetchOptions.headers||{})}});
       try{return await readResponse(r)}catch(e){
         lastError=e;
         const retryable=e?.status===502||e?.status===503||e?.status===504||e?.code==='NETWORK_ERROR'||e?.code==='NETWORK_TIMEOUT';
@@ -426,7 +423,7 @@ async function loadExplore(){
 
 function renderGames(){const box=el('gameTags');box.innerHTML='';config.games.forEach(g=>{const b=document.createElement('button');b.className='tag'+(state.games.includes(g)?' selected':'');b.textContent=g;b.dataset.game=g;b.onclick=()=>{state.games=state.games.includes(g)?state.games.filter(x=>x!==g):[...state.games,g];renderGames();};box.appendChild(b)})}
 function renderDocks(){renderLangList(config.languages);renderCountryList(config.countries)}
-function renderLangList(list){const box=el('langList');box.innerHTML='';const visible=list.filter(l=>SUPPORTED_UI_LANGS.has(l.code));visible.forEach(l=>{const b=document.createElement('button');b.className='dock-item'+(state.language===l.code?' active':'');b.innerHTML=`<strong>${escapeHtml(l.native||l.name)}</strong><small>${escapeHtml(l.name||l.code)}</small>`;b.onclick=()=>{state.language=l.code;try{localStorage.setItem('byp_language',l.code)}catch{};applyTranslations();updateCountryUI();renderAccountButton();renderPremiumStatus();if(state.result)renderResults();renderGames();renderLangList(config.languages);renderCountryList(config.countries);closeDocks();toast(`${t('languageSet')} ${l.native||l.name}`);};box.appendChild(b)})}
+function renderLangList(list){const box=el('langList');box.innerHTML='';const visible=list.filter(l=>SUPPORTED_UI_LANGS.has(l.code));visible.forEach(l=>{const b=document.createElement('button');b.className='dock-item'+(state.language===l.code?' active':'');b.innerHTML=`<strong>${escapeHtml(l.native||l.name)}</strong><small>${escapeHtml(l.name||l.code)}</small>`;b.onclick=()=>{state.language=l.code;try{localStorage.setItem('byp_language',l.code)}catch{};applyTranslations();updateCountryUI();if(state.result)renderResults();renderGames();renderLangList(config.languages);renderCountryList(config.countries);closeDocks();toast(`${t('languageSet')} ${l.native||l.name}`);};box.appendChild(b)})}
 function renderCountryList(list){const box=el('countryList');box.innerHTML='';list.forEach(c=>{const b=document.createElement('button');b.className='dock-item'+(state.country===c.code?' active':'');const name=localizeRegionName(c.code);b.innerHTML=`<strong>${escapeHtml(name)}</strong><small>${escapeHtml(c.code)} · ${escapeHtml(c.currency)}</small>`;b.onclick=()=>{state.country=c.code;state.currency=c.currency;try{localStorage.setItem('byp_country',c.code)}catch{};updateCountryUI();updateBudgetUI();closeDocks();toast(`${t('marketChanged')} ${name}`)};box.appendChild(b)})}
 function openDock(which){el('overlay').hidden=false;el(which).hidden=false}
 function closeDocks(){el('overlay').hidden=true;el('languageDock').hidden=true;el('countryDock').hidden=true}
@@ -486,6 +483,31 @@ async function runRecommendation(){
 }
 
 function localizedResultTitle(r){if(r?.type==='laptop')return `${t('laptop')} — ${t('bestFit')}`;if(r?.type==='prebuilt')return t('prebuilt');if(r?.type==='used')return t('used');const mode=state.preset||'smart';return t(mode==='smart'?'smartBuy':mode==='speed'?'speedDemon':'beast');}
+function renderEnhancementPanels(result){
+  const score=result.build_score||{};
+  const hunt=result.price_hunt||{};
+  const bars=[['performance',score.performance],['compatibility',score.compatibility],['upgradeability',score.upgradeability],['budgetFit',score.budget_fit]].filter(([,v])=>Number.isFinite(Number(v)));
+  const scoreHtml=`<div class="enhance-grid">
+    <section class="enhance-card score-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('buildScore'))}</span><strong>${Number(score.overall||0)}/100</strong></div><span class="score-pill">${escapeHtml(t('overall'))}</span></div>
+      <div class="score-bars">${bars.map(([k,v])=>`<div class="score-row"><span>${escapeHtml(t(k))}</span><div class="score-track"><i style="width:${Math.max(0,Math.min(100,Number(v)))}%"></i></div><b>${Math.round(Number(v))}</b></div>`).join('')}</div></section>
+    <section class="enhance-card hunt-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('priceHunt'))}</span><strong>${hunt.live_count||0} ${escapeHtml(t('liveOffers'))}</strong></div><span class="hunt-meta">${hunt.stores_count||0} ${escapeHtml(t('stores'))}</span></div>
+      <div class="hunt-strip">${(result.parts||[]).slice(0,4).map(p=>{const offers=(p.offers||[]).filter(o=>o.url);const numeric=offers.filter(o=>o.price!=null).sort((a,b)=>Number(a.price)-Number(b.price));const best=numeric[0];return `<div class="hunt-mini"><span>${escapeHtml(p.category)}</span><strong>${best?fmtMoney(best.price,best.currency):fmtMoney(p.price,p.currency)}</strong><small>${best?escapeHtml(best.store):escapeHtml(t('reference'))}</small><button type="button" class="tiny-hunt" data-hunt-part="${escapeHtml(p.id)}">${escapeHtml(t('searchAllStores'))}</button></div>`}).join('')}</div></section>
+  </div>
+  <div class="enhance-card why-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('whyBuild'))}</span><strong>${escapeHtml(result.title||t('smartBuy'))}</strong></div></div><div class="why-grid">${(result.build_reasons||result.reasons||[]).slice(0,3).map(x=>`<div class="why-item"><span>✓</span><p>${escapeHtml(x)}</p></div>`).join('')}</div></div>
+  ${(result.cheaper_alternatives||[]).length?`<div class="enhance-card savings-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('saveMoney'))}</span><strong>${escapeHtml(t('compatibleSwap'))}</strong></div></div><div class="swap-grid">${result.cheaper_alternatives.slice(0,4).map(a=>`<div class="swap-card"><span>${escapeHtml(a.category)}</span><strong>${escapeHtml(a.name)}</strong><div><b>${fmtMoney(a.price,a.currency)}</b><small>${escapeHtml(t('saves'))} ${fmtMoney(a.savings,a.currency)}</small></div><small>${escapeHtml(a.why||'')}</small></div>`).join('')}</div></div>`:''}`;
+  return scoreHtml;
+}
+
+function bindHuntButtons(result){
+  qa('[data-hunt-part]').forEach(btn=>btn.onclick=()=>{
+    const part=(result.parts||[]).find(p=>p.id===btn.dataset.huntPart); if(!part)return;
+    const offers=(part.offers||[]).filter(o=>o.url); if(!offers.length)return;
+    const overlay=document.createElement('div'); overlay.className='hunt-modal-overlay';
+    overlay.innerHTML=`<div class="hunt-modal"><div class="hunt-modal-head"><div><span class="enhance-kicker">${escapeHtml(t('priceHunt'))}</span><h4>${escapeHtml(part.name)}</h4></div><button class="hunt-close" type="button">×</button></div><div class="hunt-offer-list">${offers.map(o=>`<a class="hunt-offer-row" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span><i class="offer-dot ${o.live?'on':''}"></i><strong>${escapeHtml(o.store)}</strong><small>${escapeHtml(o.live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference'))}</small></span><b>${o.price==null?'↗':fmtMoney(o.price,o.currency)+' →'}</b></a>`).join('')}</div></div>`;
+    document.body.appendChild(overlay); const close=()=>overlay.remove(); overlay.onclick=e=>{if(e.target===overlay)close()}; overlay.querySelector('.hunt-close').onclick=close;
+  });
+}
+
 function renderResults(){
   const r=state.result;if(!r||!r.query)return;el('summaryBudget').textContent=fmtMoney(r.query.budget,r.query.currency);el('summaryMarket').textContent=`${r.query.country} · ${r.query.currency}`;el('summaryDirection').textContent=localizedResultTitle(r);
   el('briefChips').innerHTML=buildBrief().map(x=>`<span class="brief-chip">${escapeHtml(x)}</span>`).join('');
@@ -506,16 +528,16 @@ function renderResultPreset(result){
       <div class="portable-product-card"><div><span class="part-cat">${t('laptop')}</span><h4>${escapeHtml(product.name)}</h4><p>${escapeHtml(product.why||'')}</p><div class="laptop-spec-grid">${[
         ['cpu','cpu_model'],['gpu','gpu_model'],['ram','ram_gb'],['storage','storage_gb'],['display','display_size'],['refresh','refresh_hz'],['weight','weight_kg'],['battery','battery_wh'],['os','os'],['screen','screen_type']
       ].filter(([k,key])=>product.specs?.[key]!=null).map(([k,key])=>`<div class="laptop-spec"><span>${escapeHtml(laptopSpecLabel(k))}</span><strong>${escapeHtml(String(product.specs[key]))}${['ram_gb','storage_gb','display_size','refresh_hz','weight_kg','battery_wh'].includes(key)?({'ram_gb':' GB','storage_gb':' GB','display_size':' in','refresh_hz':' Hz','weight_kg':' kg','battery_wh':' Wh'}[key]||''):''}</strong></div>`).join('')}</div></div><div class="portable-price">${fmtMoney(product.price,product.currency)}</div><div class="portable-offers">${(product.offers||[]).slice(0,8).map(o=>{const live=!!o.live;const noPrice=o.price==null;const label=live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference');return `<a class="offer-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span class="offer-dot ${live?'on':''}"></span>${escapeHtml(o.store)}${noPrice?'':` · ${fmtMoney(o.price,o.currency)}`} <small class="offer-source">${label}</small>${noPrice?`<small class="offer-action">${t('viewStore')}</small>`:'→'}</a>`}).join('')}</div></div>
-      <div class="reason-strip">${reasonKeys.map((k,i)=>`<div class="reason-box"><strong>${[t('whyFits'),t('goalCheck'),t('moneyMove')][i]}</strong>${escapeHtml(t(k))}</div>`).join('')}</div>
+      <div class="reason-strip">${reasonKeys.map((k,i)=>`<div class="reason-box"><strong>${[t('whyFits'),t('goalCheck'),t('moneyMove')][i]}</strong>${escapeHtml(t(k))}</div>`).join('')}</div>${renderEnhancementPanels(result)}
       ${(result.nearby_options||[]).length?`<div class="nearby-options"><div class="nearby-head"><strong>${t('nearbyOptions')}</strong><span>${t('nearbySub')}</span></div><div class="nearby-grid">${result.nearby_options.slice(0,3).map(o=>`<div class="nearby-card"><strong>${escapeHtml(o.name)}</strong><span>${fmtMoney(o.price,o.currency)}</span><small>${escapeHtml(o.why||'')}</small></div>`).join('')}</div></div>`:''}
       <div class="build-footer"><div><span class="muted">${t('estimatedTotal')}</span><div class="build-total">${fmtMoney(result.total,result.currency)}</div><small class="data-note">${result.budget_match==='closest-available'?`${escapeHtml(t('closestAvailable'))} · ${escapeHtml(t('budgetDelta'))}: ${fmtMoney(result.budget_delta,result.currency)}`:escapeHtml(t('budgetMatchWithin'))}</small><small id="dataModeNote" class="data-note"></small></div><div class="build-actions"><button class="small-btn" id="saveBuild">${t('save')}</button><button class="small-btn" id="shareBuild">${t('share')}</button><button class="small-btn" id="copyBuild">${t('copy')}</button></div></div>`;
     qa('.preset-tab').forEach(x=>x.classList.remove('active'));q('[data-preset="smart"]')?.classList.add('active');
     el('heroFit').textContent=`${result.performance_fit}%`; el('heroBudget').textContent=fmtMoney(result.query?.budget ?? state.budget,result.query?.currency || state.currency);
-    el('saveBuild').onclick=saveBuild; el('copyBuild').onclick=copyBuild; el('shareBuild').onclick=shareBuild; const dataNote=el('dataModeNote'); if(dataNote)dataNote.textContent=result.data_mode==='reference-demo'?t('referenceNote'):t('liveNote'); return;
+    el('saveBuild').onclick=saveBuild; el('copyBuild').onclick=copyBuild; el('shareBuild').onclick=shareBuild; bindHuntButtons(result); const dataNote=el('dataModeNote'); if(dataNote)dataNote.textContent=result.data_mode==='reference-demo'?t('referenceNote'):t('liveNote'); return;
   }
   card.innerHTML=`<div class="result-hero"><div><span class="section-kicker">${t('matchReady')}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(result.tagline||t('matchSub'))}</p><div class="result-metrics"><span>${labels.value} <b>${result.value_score}</b></span><span>${labels.future} <b>${result.future_score}</b></span>${result.fps_estimate?`<span>${labels.fps} <b>${result.fps_estimate.low}–${result.fps_estimate.high}</b></span>`:''}</div></div><div class="score-ring"><div><strong>${result.performance_fit}</strong><span>${labels.fit}</span></div></div></div>
   <div class="parts-grid">${(result.parts||[]).map(p=>`<div class="part-card"><div class="part-top"><span class="part-cat">${escapeHtml(p.category)}</span><span class="part-price">${fmtMoney(p.price,p.currency)}</span></div><h4>${escapeHtml(p.name)}</h4><p>${escapeHtml(p.why)}</p><div class="offers">${(p.offers||[]).slice(0,5).map(o=>{const live=!!o.live; const noPrice=o.price==null; const label=live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference'); const meta=o.captured_at?` · ${new Date(o.captured_at).toLocaleDateString()}`:''; return `<a class="offer-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span class="offer-dot ${live?'on':''}"></span>${escapeHtml(o.store)}${noPrice?'':` · ${fmtMoney(o.price,o.currency)}`} <small class="offer-source">${label}${meta}</small> ${noPrice?`<small class="offer-action">${t('viewStore')}</small>`:'→'}</a>`}).join('')}</div></div>`).join('')}</div>
-  <div class="reason-strip">${reasonKeys.map((k,i)=>`<div class="reason-box"><strong>${[t('whyFits'),t('goalCheck'),t('moneyMove')][i]}</strong>${escapeHtml(t(k))}</div>`).join('')}</div>
+  <div class="reason-strip">${reasonKeys.map((k,i)=>`<div class="reason-box"><strong>${[t('whyFits'),t('goalCheck'),t('moneyMove')][i]}</strong>${escapeHtml(t(k))}</div>`).join('')}</div>${renderEnhancementPanels(result)}
   ${(result.nearby_options||[]).length?`<div class="nearby-options"><div class="nearby-head"><strong>${t('nearbyOptions')}</strong><span>${t('nearbySub')}</span></div><div class="nearby-grid">${result.nearby_options.slice(0,3).map(o=>`<div class="nearby-card"><strong>${escapeHtml(o.name)}</strong><span>${fmtMoney(o.price,o.currency)}</span><small>${escapeHtml(o.why||'')}</small></div>`).join('')}</div></div>`:''}
   <div class="build-footer"><div><span class="muted">${t('estimatedTotal')}</span><div class="build-total">${fmtMoney(result.total,result.currency)}</div><small class="data-note">${result.budget_match==='closest-available'?`${escapeHtml(t('closestAvailable'))} · ${escapeHtml(t('budgetDelta'))}: ${fmtMoney(result.budget_delta,result.currency)}`:escapeHtml(t('budgetMatchWithin'))}</small><small id="dataModeNote" class="data-note"></small></div><div class="build-actions"><button class="small-btn" id="saveBuild">${t('save')}</button><button class="small-btn" id="shareBuild">${t('share')}</button><button class="small-btn" id="copyBuild">${t('copy')}</button></div></div>`;
   qa('.preset-tab').forEach(x=>x.classList.remove('active'));const active=mode==='smart'?q('[data-preset="smart"]'):mode==='speed'?q('[data-preset="speed"]'):q('[data-preset="beast"]');active?.classList.add('active');
@@ -539,112 +561,9 @@ async function shareBuild(){
   finally{busyActions.delete('share');if(b)b.disabled=false;}
 }
 
-
-const AUTH_TEXT = {
-  en:{signIn:'Sign in',create:'Create account',account:'Account',signOut:'Sign out',savedBuilds:'My saved builds',premium:'Premium',welcome:'Welcome back.',free:'FREE',premiumPlan:'PREMIUM',savedEmpty:'You have no saved builds yet.',coming:'Premium is coming later. Free tools stay available now.',savedCount:'saved builds',loginTitle:'Save your builds. Keep your progress.',registerTitle:'Create your free BuildYourPC account.',loginSub:'Keep builds and favorites in one place.',registerSub:'Your account is free. Premium can be added later.',name:'Display name',email:'Email',password:'Password',loginError:'Email or password is incorrect.',registerError:'Could not create the account.',success:'You’re signed in.',logout:'You’re signed out.'},
-  fr:{signIn:'Se connecter',create:'Créer un compte',account:'Compte',signOut:'Se déconnecter',savedBuilds:'Mes configurations',premium:'Premium',welcome:'Bon retour.',free:'GRATUIT',premiumPlan:'PREMIUM',savedEmpty:'Aucune configuration enregistrée.',coming:'Premium arrive plus tard. Les outils gratuits restent disponibles.',savedCount:'configurations',loginTitle:'Enregistrez vos configurations.',registerTitle:'Créez votre compte BuildYourPC.',loginSub:'Gardez vos configurations et favoris au même endroit.',registerSub:'Le compte est gratuit. Premium pourra être ajouté plus tard.',name:'Nom',email:'E-mail',password:'Mot de passe',loginError:'E-mail ou mot de passe incorrect.',registerError:'Impossible de créer le compte.',success:'Vous êtes connecté.',logout:'Vous êtes déconnecté.'},
-  ar:{signIn:'تسجيل الدخول',create:'إنشاء حساب',account:'الحساب',signOut:'تسجيل الخروج',savedBuilds:'تجميعاتي المحفوظة',premium:'Premium',welcome:'مرحباً بعودتك.',free:'مجاني',premiumPlan:'PREMIUM',savedEmpty:'لا توجد تجميعات محفوظة بعد.',coming:'Premium قادم لاحقاً. الميزات المجانية ستبقى متاحة.',savedCount:'تجميعات',loginTitle:'احفظ تجميعاتك وتقدمك.',registerTitle:'أنشئ حساب BuildYourPC مجاناً.',loginSub:'احتفظ بتجميعاتك والمفضلة في مكان واحد.',registerSub:'الحساب مجاني، ويمكن إضافة Premium لاحقاً.',name:'الاسم',email:'البريد الإلكتروني',password:'كلمة المرور',loginError:'البريد الإلكتروني أو كلمة المرور غير صحيحة.',registerError:'تعذر إنشاء الحساب.',success:'تم تسجيل الدخول.',logout:'تم تسجيل الخروج.'}
-};
-function at(key){return (AUTH_TEXT[state.language]||AUTH_TEXT.en)[key]||AUTH_TEXT.en[key]||key}
-function renderAccountButton(){
-  const b=el('accountBtn'), label=el('accountLabel'); if(!b||!label)return;
-  if(state.user){label.textContent=state.user.display_name||at('account');b.classList.add('signed-in');b.setAttribute('aria-label',at('account'))}
-  else{label.textContent=at('signIn');b.classList.remove('signed-in');b.setAttribute('aria-label',at('signIn'))}
-}
-function openAuth(mode=state.user?'account':'login'){
-  state.authMode=mode;
-  const modal=el('authModal');if(!modal)return;
-  modal.hidden=false;document.body.classList.add('modal-open');
-  const out=el('authLoggedOut'), inn=el('authLoggedIn');
-  out.hidden=!!state.user;inn.hidden=!state.user;
-  if(state.user)renderAccountPanel(); else setAuthMode(mode);
-}
-function closeAuth(){const modal=el('authModal');if(modal)modal.hidden=true;document.body.classList.remove('modal-open')}
-function setAuthMode(mode){
-  state.authMode=mode==='register'?'register':'login';
-  qa('.auth-tab').forEach(x=>x.classList.toggle('active',x.dataset.authMode===state.authMode));
-  const row=el('authNameRow'), submit=el('authSubmit'), title=el('authTitle'), sub=el('authSubtitle'), pass=el('authPassword');
-  if(row)row.hidden=state.authMode!=='register';
-  if(submit)submit.innerHTML=`${at(state.authMode==='register'?'create':'signIn')} <span>→</span>`;
-  if(title)title.textContent=at(state.authMode==='register'?'registerTitle':'loginTitle');
-  if(sub)sub.textContent=at(state.authMode==='register'?'registerSub':'loginSub');
-  if(pass)pass.autocomplete=state.authMode==='register'?'new-password':'current-password';
-  const err=el('authError');if(err){err.hidden=true;err.textContent=''}
-}
-function renderAccountPanel(){
-  if(!state.user)return;
-  el('accountWelcome').textContent=`${at('welcome')} ${state.user.display_name||''}`.trim();
-  el('accountPlan').textContent=state.user.premium_active?at('premiumPlan'):at('free');
-  el('accountPlan').className=state.user.premium_active?'premium':'';
-  el('accountEmail').textContent=state.user.email;
-  el('viewAccountBuilds').textContent=at('savedBuilds');
-  el('accountPremium').textContent=at('premium');
-}
-async function loadAuthSession(){
-  try{
-    const d=await apiFetch('/api/auth/me',{timeoutMs:10000,retries:1});
-    state.user=d.user||null;
-  }catch(e){state.user=null}
-  try{state.premium=await apiFetch('/api/premium/status',{timeoutMs:10000,retries:1})}catch(e){state.premium=null}
-  renderAccountButton();renderPremiumStatus();
-}
-function renderPremiumStatus(){
-  const txt=el('premiumStatusText');if(!txt)return;
-  if(state.user?.premium_active)txt.textContent='Premium is active on your account.';
-  else txt.textContent=at('coming');
-}
-async function handleAuthSubmit(e){
-  e.preventDefault();
-  const email=el('authEmail').value.trim(), password=el('authPassword').value, display_name=el('authName').value.trim();
-  const errBox=el('authError');errBox.hidden=true;
-  const btn=el('authSubmit');btn.disabled=true;
-  try{
-    const path=state.authMode==='register'?'/api/auth/register':'/api/auth/login';
-    const body=state.authMode==='register'?{email,password,display_name}:{email,password};
-    const d=await apiFetch(path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),timeoutMs:12000});
-    state.user=d.user;renderAccountButton();renderPremiumStatus();renderAccountPanel();toast(at('success'));
-    if(state.authMode==='register')el('authForm').reset();
-    el('authLoggedOut').hidden=true;el('authLoggedIn').hidden=false;
-  }catch(e){
-    errBox.textContent=e.message||at('registerError');errBox.hidden=false;
-  }finally{btn.disabled=false}
-}
-async function logout(){
-  try{await apiFetch('/api/auth/logout',{method:'POST',timeoutMs:8000})}catch(e){}
-  state.user=null;renderAccountButton();closeAuth();toast(at('logout'));
-}
-async function loadSavedBuilds(){
-  if(!state.user){openAuth('login');return}
-  const box=el('accountContent');box.innerHTML='<div class="account-loading">Loading…</div>';
-  try{
-    const d=await apiFetch('/api/account/builds');
-    if(!d.builds?.length){box.innerHTML=`<div class="account-empty">${at('savedEmpty')}</div>`;return}
-    box.innerHTML=d.builds.map(b=>{
-      const p=b.payload||{}, total=p.total!=null?fmtMoney(p.total,p.currency||state.currency):'—';
-      const name=p.title||p.name||'Build';
-      return `<a class="saved-build-row" href="/build/${encodeURIComponent(b.id)}#results"><div><strong>${escapeHtml(name)}</strong><small>${escapeHtml(b.created_at||'')}</small></div><span>${total} →</span></a>`;
-    }).join('');
-  }catch(e){box.innerHTML='<div class="account-empty">Could not load your saved builds.</div>'}
-}
-function premiumClick(){
-  if(!state.user){openAuth('login');toast(at('signIn'));return}
-  closeAuth();document.getElementById('premium')?.scrollIntoView({behavior:'smooth',block:'center'});
-}
-
 function escapeHtml(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-
-
-el('accountBtn')?.addEventListener('click',()=>openAuth());
-el('premiumBtn')?.addEventListener('click',premiumClick);
-el('accountPremium')?.addEventListener('click',premiumClick);
-el('logoutBtn')?.addEventListener('click',logout);
-el('viewAccountBuilds')?.addEventListener('click',loadSavedBuilds);
-el('authForm')?.addEventListener('submit',handleAuthSubmit);
-qa('[data-auth-mode]').forEach(b=>b.addEventListener('click',()=>setAuthMode(b.dataset.authMode)));
-qa('[data-auth-close]').forEach(b=>b.addEventListener('click',closeAuth));
-el('authModal')?.addEventListener('click',e=>{if(e.target.id==='authModal')closeAuth()});
 
 const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.12});qa('.reveal').forEach(x=>observer.observe(x));
 
 window.addEventListener('hashchange',()=>{if(location.hash==='#results')document.getElementById('results').scrollIntoView({behavior:'smooth'})});
-loadConfig().then(async()=>{applyTranslations();loadExistingBuild();loadExplore();await loadAuthSession();renderAccountButton();renderPremiumStatus();});
+loadConfig().then(()=>{applyTranslations();loadExistingBuild();loadExplore();});
