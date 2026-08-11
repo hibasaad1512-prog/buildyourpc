@@ -206,7 +206,115 @@ function localizeRegionName(code){
 function countryNameFallback(code){return config.countries.find(x=>x.code===code)?.name||code;}
 
 
-function t(key, vars={}){ const lang=CORE_LOCALES[state.language]||TRANSLATIONS[state.language]||TRANSLATIONS.en; const common=CORE_COMMON[state.language]||{}; const legacy=LEGACY_COMMON[state.language]||{}; const globalFallback=GLOBAL_UI_FALLBACK[state.language]||GLOBAL_UI_FALLBACK.en; let text=lang[key]??common[key]??legacy[key]??globalFallback[key]??TRANSLATIONS[state.language]?.[key]??TRANSLATIONS.en[key]??key; return String(text).replace(/\{(\w+)\}/g,(_,k)=>vars[k]??`{${k}}`); }
+const ENHANCEMENT_I18N = {
+  en:{
+    buildIntelligence:'BUILD INTELLIGENCE', checkedBefore:'We checked the build before showing it.', intelligenceSub:'Compatibility, value, upgrades and shopping options — all in one place.', readyToBuild:'✓ Ready to build', reviewNotes:'! Review notes', reviewCompatibility:'⚠ Review compatibility',
+    partsChecked:'parts checked', linksReady:'links ready', smartShopping:'SMART SHOPPING', findWhere:'Find where to buy each part', referenceFallback:'Reference prices stay clearly labeled when live retailer data is unavailable.',
+    noSafeSwap:'No safe lower-cost swap beats the current recommendation right now. Keeping the original build protects your target.', bestDeal:'Best deal', noLiveOffers:'No live offers yet', searchPart:'Search this part',
+    buildScore:'BUILD SCORE', performance:'Performance', compatibility:'Compatibility', upgradeability:'Upgradeability', budgetFit:'Budget fit', overall:'Overall',
+    priceHunt:'PRICE HUNT', liveOffers:'live offers', stores:'stores', searchAllStores:'Search all stores', whyBuild:'WHY THIS BUILD', saveMoney:'SAVE MONEY', compatibleSwap:'Compatible lower-cost swap', saves:'save',
+  },
+  fr:{
+    buildIntelligence:'INTELLIGENCE DU BUILD', checkedBefore:'Nous avons vérifié la configuration avant de vous la proposer.', intelligenceSub:'Compatibilité, valeur, évolutivité et achats — réunis au même endroit.', readyToBuild:'✓ Prêt à monter', reviewNotes:'! Vérifiez les remarques', reviewCompatibility:'⚠ Vérifiez la compatibilité',
+    partsChecked:'composants vérifiés', linksReady:'liens disponibles', smartShopping:'ACHAT INTELLIGENT', findWhere:'Trouvez où acheter chaque composant', referenceFallback:'Les prix de référence restent clairement indiqués lorsque les prix marchands en direct sont indisponibles.',
+    noSafeSwap:'Aucune alternative moins chère et sûre ne surpasse actuellement cette recommandation. Nous gardons la configuration d’origine pour préserver votre objectif.', bestDeal:'Meilleure offre', noLiveOffers:'Aucune offre en direct', searchPart:'Rechercher ce composant',
+    buildScore:'SCORE DU BUILD', performance:'Performances', compatibility:'Compatibilité', upgradeability:'Évolutivité', budgetFit:'Respect du budget', overall:'Global',
+    priceHunt:'CHASSE AUX PRIX', liveOffers:'offres en direct', stores:'boutiques', searchAllStores:'Rechercher dans toutes les boutiques', whyBuild:'POURQUOI CE BUILD', saveMoney:'ÉCONOMISEZ', compatibleSwap:'Alternative compatible moins chère', saves:'économisez',
+  },
+  ar:{
+    buildIntelligence:'ذكاء التجميعة', checkedBefore:'فحصنا التجميعة قبل أن نعرضها لك.', intelligenceSub:'التوافق والقيمة والترقية وخيارات الشراء — كلها في مكان واحد.', readyToBuild:'✓ جاهزة للبناء', reviewNotes:'! راجع الملاحظات', reviewCompatibility:'⚠ راجع التوافق',
+    partsChecked:'قطعة تم فحصها', linksReady:'رابط جاهز', smartShopping:'التسوق الذكي', findWhere:'اعرف أين تشتري كل قطعة', referenceFallback:'تبقى الأسعار المرجعية موضحة بوضوح عندما لا تتوفر أسعار المتاجر الحية.',
+    noSafeSwap:'لا يوجد حاليًا بديل أرخص وآمن يتفوق على الاختيار الحالي. أبقينا التجميعة الأصلية لحماية هدفك.', bestDeal:'أفضل عرض', noLiveOffers:'لا توجد عروض مباشرة حاليًا', searchPart:'ابحث عن هذه القطعة',
+    buildScore:'تقييم التجميعة', performance:'الأداء', compatibility:'التوافق', upgradeability:'قابلية الترقية', budgetFit:'ملاءمة الميزانية', overall:'الإجمالي',
+    priceHunt:'صيد أفضل الأسعار', liveOffers:'عروض مباشرة', stores:'متاجر', searchAllStores:'البحث في كل المتاجر', whyBuild:'لماذا هذه التجميعة؟', saveMoney:'وفّر المال', compatibleSwap:'بديل أرخص ومتوافق', saves:'توفّر',
+  },
+  es:{
+    buildIntelligence:'INTELIGENCIA DEL BUILD', checkedBefore:'Hemos revisado el equipo antes de mostrártelo.', intelligenceSub:'Compatibilidad, valor, mejoras y compras — todo en un solo lugar.', readyToBuild:'✓ Listo para montar', reviewNotes:'! Revisa las notas', reviewCompatibility:'⚠ Revisa la compatibilidad',
+    partsChecked:'componentes revisados', linksReady:'enlaces disponibles', smartShopping:'COMPRA INTELIGENTE', findWhere:'Encuentra dónde comprar cada componente', referenceFallback:'Los precios de referencia siguen claramente marcados cuando no hay precios de tienda en directo.',
+    noSafeSwap:'Ahora mismo no hay una alternativa más barata y segura que supere esta recomendación. Mantenemos el build original para proteger tu objetivo.', bestDeal:'Mejor oferta', noLiveOffers:'Aún no hay ofertas en directo', searchPart:'Buscar este componente',
+    buildScore:'PUNTUACIÓN DEL BUILD', performance:'Rendimiento', compatibility:'Compatibilidad', upgradeability:'Capacidad de actualización', budgetFit:'Ajuste al presupuesto', overall:'Total',
+    priceHunt:'CAZA DE PRECIOS', liveOffers:'ofertas en directo', stores:'tiendas', searchAllStores:'Buscar en todas las tiendas', whyBuild:'¿POR QUÉ ESTE BUILD?', saveMoney:'AHORRA', compatibleSwap:'Alternativa compatible más barata', saves:'ahorras',
+  },
+  de:{
+    buildIntelligence:'BUILD-INTELLIGENZ', checkedBefore:'Wir haben den Build geprüft, bevor wir ihn dir zeigen.', intelligenceSub:'Kompatibilität, Preis-Leistung, Upgrades und Kaufoptionen — alles an einem Ort.', readyToBuild:'✓ Bereit zum Bauen', reviewNotes:'! Hinweise prüfen', reviewCompatibility:'⚠ Kompatibilität prüfen',
+    partsChecked:'Komponenten geprüft', linksReady:'Links verfügbar', smartShopping:'SMART SHOPPING', findWhere:'Finde heraus, wo du jedes Teil kaufen kannst', referenceFallback:'Referenzpreise bleiben klar gekennzeichnet, wenn keine Live-Händlerpreise verfügbar sind.',
+    noSafeSwap:'Aktuell gibt es keine sichere, günstigere Alternative, die die Empfehlung verbessert. Wir behalten den ursprünglichen Build bei, damit dein Ziel erhalten bleibt.', bestDeal:'Bestes Angebot', noLiveOffers:'Noch keine Live-Angebote', searchPart:'Dieses Teil suchen',
+    buildScore:'BUILD-SCORE', performance:'Leistung', compatibility:'Kompatibilität', upgradeability:'Aufrüstbarkeit', budgetFit:'Budget-Passung', overall:'Gesamt',
+    priceHunt:'PREIS-SUCHE', liveOffers:'Live-Angebote', stores:'Shops', searchAllStores:'In allen Shops suchen', whyBuild:'WARUM DIESER BUILD?', saveMoney:'GELD SPAREN', compatibleSwap:'Günstigere kompatible Alternative', saves:'sparst',
+  },
+  it:{
+    buildIntelligence:'INTELLIGENZA DEL BUILD', checkedBefore:'Abbiamo verificato la configurazione prima di mostrartela.', intelligenceSub:'Compatibilità, valore, upgrade e opzioni di acquisto — tutto in un unico posto.', readyToBuild:'✓ Pronto da assemblare', reviewNotes:'! Controlla le note', reviewCompatibility:'⚠ Controlla la compatibilità',
+    partsChecked:'componenti verificati', linksReady:'link disponibili', smartShopping:'ACQUISTO SMART', findWhere:'Scopri dove acquistare ogni componente', referenceFallback:'I prezzi di riferimento restano chiaramente indicati quando non sono disponibili prezzi live dei negozi.',
+    noSafeSwap:'Al momento non c’è un’alternativa più economica e sicura che migliori questa scelta. Manteniamo il build originale per proteggere il tuo obiettivo.', bestDeal:'Miglior offerta', noLiveOffers:'Nessuna offerta live', searchPart:'Cerca questo componente',
+    buildScore:'PUNTEGGIO BUILD', performance:'Prestazioni', compatibility:'Compatibilità', upgradeability:'Aggiornabilità', budgetFit:'Adattamento al budget', overall:'Totale',
+    priceHunt:'CACCIA AL PREZZO', liveOffers:'offerte live', stores:'negozi', searchAllStores:'Cerca in tutti i negozi', whyBuild:'PERCHÉ QUESTO BUILD', saveMoney:'RISPARMIA', compatibleSwap:'Alternativa compatibile più economica', saves:'risparmi',
+  },
+  pt:{
+    buildIntelligence:'INTELIGÊNCIA DO BUILD', checkedBefore:'Verificámos o build antes de o mostrar.', intelligenceSub:'Compatibilidade, valor, upgrades e opções de compra — tudo num só lugar.', readyToBuild:'✓ Pronto para montar', reviewNotes:'! Reveja as notas', reviewCompatibility:'⚠ Reveja a compatibilidade',
+    partsChecked:'peças verificadas', linksReady:'links disponíveis', smartShopping:'COMPRA INTELIGENTE', findWhere:'Veja onde comprar cada peça', referenceFallback:'Os preços de referência ficam claramente identificados quando não há preços de lojas em tempo real.',
+    noSafeSwap:'Neste momento não existe uma alternativa mais barata e segura que melhore esta recomendação. Mantemos o build original para proteger o seu objetivo.', bestDeal:'Melhor oferta', noLiveOffers:'Ainda sem ofertas em direto', searchPart:'Pesquisar esta peça',
+    buildScore:'PONTUAÇÃO DO BUILD', performance:'Desempenho', compatibility:'Compatibilidade', upgradeability:'Capacidade de upgrade', budgetFit:'Ajuste ao orçamento', overall:'Total',
+    priceHunt:'CAÇA AO PREÇO', liveOffers:'ofertas em direto', stores:'lojas', searchAllStores:'Pesquisar em todas as lojas', whyBuild:'PORQUE ESTE BUILD?', saveMoney:'POUPE DINHEIRO', compatibleSwap:'Alternativa compatível mais barata', saves:'poupa',
+  },
+  tr:{
+    buildIntelligence:'BUILD ZEKÂSI', checkedBefore:'Yapıyı sana göstermeden önce kontrol ettik.', intelligenceSub:'Uyumluluk, fiyat/performans, yükseltmeler ve satın alma seçenekleri — hepsi tek yerde.', readyToBuild:'✓ Toplamaya hazır', reviewNotes:'! Notları incele', reviewCompatibility:'⚠ Uyumluluğu kontrol et',
+    partsChecked:'parça kontrol edildi', linksReady:'bağlantı hazır', smartShopping:'AKILLI ALIŞVERİŞ', findWhere:'Her parçayı nereden alabileceğini bul', referenceFallback:'Canlı mağaza fiyatları yoksa referans fiyatlar açıkça belirtilir.',
+    noSafeSwap:'Şu anda mevcut öneriyi aşan daha ucuz ve güvenli bir alternatif yok. Hedefini korumak için mevcut yapıyı bırakıyoruz.', bestDeal:'En iyi teklif', noLiveOffers:'Henüz canlı teklif yok', searchPart:'Bu parçayı ara',
+    buildScore:'BUILD SKORU', performance:'Performans', compatibility:'Uyumluluk', upgradeability:'Yükseltilebilirlik', budgetFit:'Bütçeye uygunluk', overall:'Genel',
+    priceHunt:'FİYAT AVCISI', liveOffers:'canlı teklif', stores:'mağaza', searchAllStores:'Tüm mağazalarda ara', whyBuild:'NEDEN BU BUILD?', saveMoney:'TASARRUF ET', compatibleSwap:'Daha ucuz uyumlu alternatif', saves:'tasarruf',
+  },
+  ru:{
+    buildIntelligence:'ИНТЕЛЛЕКТ СБОРКИ', checkedBefore:'Мы проверили сборку перед тем, как показать её вам.', intelligenceSub:'Совместимость, ценность, апгрейды и варианты покупки — всё в одном месте.', readyToBuild:'✓ Можно собирать', reviewNotes:'! Проверьте примечания', reviewCompatibility:'⚠ Проверьте совместимость',
+    partsChecked:'комплектующих проверено', linksReady:'ссылок доступно', smartShopping:'УМНАЯ ПОКУПКА', findWhere:'Узнайте, где купить каждую комплектующую', referenceFallback:'При отсутствии живых цен магазинов референсные цены остаются явно обозначены.',
+    noSafeSwap:'Сейчас нет безопасной более дешёвой альтернативы, которая была бы лучше этой рекомендации. Мы оставили исходную сборку, чтобы сохранить вашу цель.', bestDeal:'Лучшее предложение', noLiveOffers:'Пока нет актуальных предложений', searchPart:'Найти эту комплектующую',
+    buildScore:'ОЦЕНКА СБОРКИ', performance:'Производительность', compatibility:'Совместимость', upgradeability:'Возможность апгрейда', budgetFit:'Соответствие бюджету', overall:'Итог',
+    priceHunt:'ОХОТА ЗА ЦЕНОЙ', liveOffers:'актуальных предложений', stores:'магазинов', searchAllStores:'Искать во всех магазинах', whyBuild:'ПОЧЕМУ ЭТА СБОРКА?', saveMoney:'СЭКОНОМИТЬ', compatibleSwap:'Более дешёвая совместимая альтернатива', saves:'экономия',
+  },
+  ja:{
+    buildIntelligence:'BUILD INTELLIGENCE', checkedBefore:'表示する前に、この構成の互換性をチェックしました。', intelligenceSub:'互換性、コスパ、アップグレード性、購入先をまとめて確認できます。', readyToBuild:'✓ 組み立て準備OK', reviewNotes:'! 注意事項を確認', reviewCompatibility:'⚠ 互換性を確認',
+    partsChecked:'点のパーツを確認', linksReady:'件の購入リンク', smartShopping:'SMART SHOPPING', findWhere:'各パーツの購入先を探す', referenceFallback:'ライブ価格が利用できない場合は、参考価格であることを明示します。',
+    noSafeSwap:'現時点では、現在の構成を上回る安全で安価な代替品はありません。目標を守るため、元の構成を維持します。', bestDeal:'最安・おすすめ', noLiveOffers:'ライブ価格なし', searchPart:'このパーツを検索',
+    buildScore:'BUILD SCORE', performance:'性能', compatibility:'互換性', upgradeability:'アップグレード性', budgetFit:'予算適合', overall:'総合',
+    priceHunt:'価格チェック', liveOffers:'ライブ価格', stores:'店舗', searchAllStores:'すべての店舗を検索', whyBuild:'なぜこの構成？', saveMoney:'節約', compatibleSwap:'互換性のある安い代替品', saves:'節約額',
+  },
+  ko:{
+    buildIntelligence:'BUILD INTELLIGENCE', checkedBefore:'추천 결과를 보여드리기 전에 호환성을 확인했습니다.', intelligenceSub:'호환성, 가성비, 업그레이드, 구매처를 한곳에서 확인하세요.', readyToBuild:'✓ 조립 준비 완료', reviewNotes:'! 참고 사항 확인', reviewCompatibility:'⚠ 호환성 확인',
+    partsChecked:'개 부품 확인', linksReady:'개 링크 준비됨', smartShopping:'스마트 쇼핑', findWhere:'각 부품을 어디서 살지 찾아보세요', referenceFallback:'실시간 판매가가 없으면 참고 가격임을 명확히 표시합니다.',
+    noSafeSwap:'현재 추천보다 더 저렴하면서 안전한 대안은 없습니다. 목표를 지키기 위해 기존 구성을 유지합니다.', bestDeal:'최저가 추천', noLiveOffers:'실시간 딜 없음', searchPart:'이 부품 검색',
+    buildScore:'BUILD SCORE', performance:'성능', compatibility:'호환성', upgradeability:'업그레이드성', budgetFit:'예산 적합도', overall:'종합',
+    priceHunt:'가격 찾기', liveOffers:'실시간 딜', stores:'스토어', searchAllStores:'모든 스토어 검색', whyBuild:'왜 이 구성인가요?', saveMoney:'절약하기', compatibleSwap:'호환 가능한 더 저렴한 대안', saves:'절약',
+  },
+  zh:{
+    buildIntelligence:'智能装机分析', checkedBefore:'在展示之前，我们已经检查了这套配置。', intelligenceSub:'兼容性、性价比、升级空间和购买渠道，一次看清。', readyToBuild:'✓ 可以装机', reviewNotes:'! 请查看提示', reviewCompatibility:'⚠ 请检查兼容性',
+    partsChecked:'个零件已检查', linksReady:'个购买链接', smartShopping:'智能购物', findWhere:'查看每个零件在哪里购买', referenceFallback:'没有实时商家价格时，会明确标注为参考价格。',
+    noSafeSwap:'目前没有既安全又更便宜、同时还能胜过当前推荐的替代方案。为了保证你的目标，我们保留原配置。', bestDeal:'最佳优惠', noLiveOffers:'暂无实时优惠', searchPart:'搜索此零件',
+    buildScore:'整机评分', performance:'性能', compatibility:'兼容性', upgradeability:'升级能力', budgetFit:'预算匹配', overall:'综合',
+    priceHunt:'全网比价', liveOffers:'实时优惠', stores:'家商店', searchAllStores:'搜索所有商店', whyBuild:'为什么是这套配置？', saveMoney:'省钱', compatibleSwap:'更便宜的兼容替代品', saves:'可省',
+  },
+  pl:{
+    buildIntelligence:'INTELIGENCJA ZESTAWU', checkedBefore:'Sprawdziliśmy zestaw przed jego wyświetleniem.', intelligenceSub:'Kompatybilność, opłacalność, rozbudowa i zakupy — wszystko w jednym miejscu.', readyToBuild:'✓ Gotowe do złożenia', reviewNotes:'! Sprawdź uwagi', reviewCompatibility:'⚠ Sprawdź kompatybilność',
+    partsChecked:'sprawdzonych podzespołów', linksReady:'dostępnych linków', smartShopping:'SMART SHOPPING', findWhere:'Sprawdź, gdzie kupić każdy podzespół', referenceFallback:'Gdy brak cen na żywo, ceny referencyjne są wyraźnie oznaczone.',
+    noSafeSwap:'Obecnie nie ma bezpiecznej, tańszej alternatywy, która byłaby lepsza od tej rekomendacji. Zostawiamy oryginalny zestaw, aby zachować Twój cel.', bestDeal:'Najlepsza oferta', noLiveOffers:'Brak ofert na żywo', searchPart:'Szukaj tego podzespołu',
+    buildScore:'OCENA ZESTAWU', performance:'Wydajność', compatibility:'Kompatybilność', upgradeability:'Możliwość rozbudowy', budgetFit:'Dopasowanie do budżetu', overall:'Ogółem',
+    priceHunt:'ŁOWCA CEN', liveOffers:'ofert na żywo', stores:'sklepów', searchAllStores:'Szukaj we wszystkich sklepach', whyBuild:'DLACZEGO TEN ZESTAW?', saveMoney:'OSZCZĘDZAJ', compatibleSwap:'Tańsza kompatybilna alternatywa', saves:'oszczędność',
+  },
+  nl:{
+    buildIntelligence:'BUILD-INTELLIGENTIE', checkedBefore:'We hebben de build gecontroleerd voordat we hem tonen.', intelligenceSub:'Compatibiliteit, waarde, upgrades en aankoopopties — allemaal op één plek.', readyToBuild:'✓ Klaar om te bouwen', reviewNotes:'! Bekijk de opmerkingen', reviewCompatibility:'⚠ Controleer de compatibiliteit',
+    partsChecked:'onderdelen gecontroleerd', linksReady:'links klaar', smartShopping:'SLIM SHOPPEN', findWhere:'Ontdek waar je elk onderdeel kunt kopen', referenceFallback:'Referentieprijzen blijven duidelijk gemarkeerd wanneer live winkelprijzen niet beschikbaar zijn.',
+    noSafeSwap:'Er is momenteel geen veilige, goedkopere optie die de huidige aanbeveling verbetert. We behouden de huidige build om je doel te beschermen.', bestDeal:'Beste deal', noLiveOffers:'Nog geen live deals', searchPart:'Zoek dit onderdeel',
+    buildScore:'BUILD SCORE', performance:'Prestaties', compatibility:'Compatibiliteit', upgradeability:'Upgradebaarheid', budgetFit:'Past bij budget', overall:'Totaal',
+    priceHunt:'PRIJSJACHT', liveOffers:'live deals', stores:'winkels', searchAllStores:'Zoek in alle winkels', whyBuild:'WAAROM DEZE BUILD?', saveMoney:'BESPAAR', compatibleSwap:'Goedkopere compatibele optie', saves:'bespaar',
+  },
+  hi:{
+    buildIntelligence:'BUILD INTELLIGENCE', checkedBefore:'दिखाने से पहले हमने इस बिल्ड की जाँच की है।', intelligenceSub:'कम्पैटिबिलिटी, वैल्यू, अपग्रेड और खरीद विकल्प — सब एक जगह।', readyToBuild:'✓ बिल्ड के लिए तैयार', reviewNotes:'! नोट्स देखें', reviewCompatibility:'⚠ कम्पैटिबिलिटी जाँचें',
+    partsChecked:'पार्ट्स की जाँच', linksReady:'लिंक उपलब्ध', smartShopping:'स्मार्ट शॉपिंग', findWhere:'हर पार्ट कहाँ खरीदें, देखें', referenceFallback:'लाइव स्टोर कीमतें उपलब्ध न होने पर रेफरेंस कीमत साफ़ तौर पर दिखाई जाती है।',
+    noSafeSwap:'अभी कोई ऐसा सुरक्षित और सस्ता विकल्प नहीं है जो मौजूदा सिफारिश से बेहतर हो। आपके लक्ष्य के लिए मूल बिल्ड रखा गया है।', bestDeal:'सबसे अच्छा सौदा', noLiveOffers:'अभी लाइव ऑफर नहीं', searchPart:'इस पार्ट को खोजें',
+    buildScore:'BUILD SCORE', performance:'परफॉर्मेंस', compatibility:'कम्पैटिबिलिटी', upgradeability:'अपग्रेड क्षमता', budgetFit:'बजट अनुकूलता', overall:'कुल',
+    priceHunt:'PRICE HUNT', liveOffers:'लाइव ऑफर', stores:'स्टोर', searchAllStores:'सभी स्टोर में खोजें', whyBuild:'यह बिल्ड क्यों?', saveMoney:'पैसे बचाएँ', compatibleSwap:'सस्ता कम्पैटिबल विकल्प', saves:'बचत',
+  }
+};
+
+function t(key, vars={}){ const lang=CORE_LOCALES[state.language]||TRANSLATIONS[state.language]||TRANSLATIONS.en; const common=CORE_COMMON[state.language]||{}; const legacy=LEGACY_COMMON[state.language]||{}; const globalFallback=GLOBAL_UI_FALLBACK[state.language]||GLOBAL_UI_FALLBACK.en; const enh=ENHANCEMENT_I18N[state.language]||ENHANCEMENT_I18N.en; let text=lang[key]??common[key]??legacy[key]??globalFallback[key]??enh[key]??TRANSLATIONS[state.language]?.[key]??TRANSLATIONS.en[key]??ENHANCEMENT_I18N.en[key]??key; return String(text).replace(/\{(\w+)\}/g,(_,k)=>vars[k]??`{${k}}`); }
 function localizedApiError(err){
   const code=String(err?.code||'');
   if(code==='NETWORK_ERROR') return t('offline');
@@ -489,13 +597,13 @@ function renderEnhancementPanels(result){
   const parts=result.parts||[];
   const bars=[['performance',score.performance],['compatibility',score.compatibility],['upgradeability',score.upgradeability],['budgetFit',score.budget_fit]].filter(([,v])=>Number.isFinite(Number(v)));
   const compat=Number(score.compatibility||0);
-  const verdict=compat>=90?'✓ Ready to build':compat>=75?'! Review notes':'⚠ Review compatibility';
+  const verdict=compat>=90?t('readyToBuild'):compat>=75?t('reviewNotes'):t('reviewCompatibility');
   const verdictClass=compat>=90?'good':compat>=75?'warn':'bad';
   const allOffers=parts.flatMap(p=>p.offers||[]);
   const searchCount=allOffers.filter(o=>o.url).length;
   return `
   <div class="feature-banner">
-    <div><span class="enhance-kicker">BUILD INTELLIGENCE</span><strong>We checked the build before showing it</strong><p>Compatibility, value, upgrades and shopping options — all in one place.</p></div>
+    <div><span class="enhance-kicker">${escapeHtml(t('buildIntelligence'))}</span><strong>${escapeHtml(t('checkedBefore'))}</strong><p>${escapeHtml(t('intelligenceSub'))}</p></div>
     <span class="compat-verdict ${verdictClass}">${escapeHtml(verdict)}</span>
   </div>
   <div class="enhance-grid">
@@ -506,9 +614,9 @@ function renderEnhancementPanels(result){
       <div class="hunt-strip">${parts.slice(0,4).map(p=>{const offers=(p.offers||[]).filter(o=>o.url);const numeric=offers.filter(o=>o.price!=null).sort((a,b)=>Number(a.price)-Number(b.price));const best=numeric[0];return `<div class="hunt-mini"><span>${escapeHtml(p.category)}</span><strong>${best?fmtMoney(best.price,best.currency):fmtMoney(p.price,p.currency)}</strong><small>${best?escapeHtml(best.store):escapeHtml(t('reference'))}</small><button type="button" class="tiny-hunt" data-hunt-part="${escapeHtml(p.id)}">${escapeHtml(t('searchAllStores'))}</button></div>`}).join('')}</div>
     </section>
   </div>
-  <div class="enhance-card why-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('whyBuild'))}</span><strong>${escapeHtml(result.title||t('smartBuy'))}</strong></div><span class="hunt-meta">${parts.length} parts checked</span></div><div class="why-grid">${(result.build_reasons||result.reasons||[]).slice(0,4).map(x=>`<div class="why-item"><span>✓</span><p>${escapeHtml(x)}</p></div>`).join('')}</div></div>
-  <div class="enhance-card shopping-card"><div class="enhance-head"><div><span class="enhance-kicker">SMART SHOPPING</span><strong>Find where to buy each part</strong></div><span class="hunt-meta">${searchCount} links ready</span></div><div class="shopping-actions"><button type="button" class="primary-shop-btn" id="huntAllParts">${escapeHtml(t('searchAllStores'))}</button><span>Reference prices stay labeled when live retailer data is unavailable.</span></div></div>
-  <div class="enhance-card savings-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('saveMoney'))}</span><strong>${escapeHtml(t('compatibleSwap'))}</strong></div></div>${(result.cheaper_alternatives||[]).length?`<div class="swap-grid">${result.cheaper_alternatives.slice(0,4).map(a=>`<div class="swap-card"><span>${escapeHtml(a.category)}</span><strong>${escapeHtml(a.name)}</strong><div><b>${fmtMoney(a.price,a.currency)}</b><small>${escapeHtml(t('saves'))} ${fmtMoney(a.savings,a.currency)}</small></div><small>${escapeHtml(a.why||'')}</small></div>`).join('')}</div>`:`<div class="no-swap">No safe lower-cost swap beats the current recommendation right now. Keeping the original build protects your target.</div>`}</div>`;
+  <div class="enhance-card why-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('whyBuild'))}</span><strong>${escapeHtml(result.title||t('smartBuy'))}</strong></div><span class="hunt-meta">${parts.length} ${escapeHtml(t('partsChecked'))}</span></div><div class="why-grid">${(result.build_reasons||result.reasons||[]).slice(0,4).map(x=>`<div class="why-item"><span>✓</span><p>${escapeHtml(x)}</p></div>`).join('')}</div></div>
+  <div class="enhance-card shopping-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('smartShopping'))}</span><strong>${escapeHtml(t('findWhere'))}</strong></div><span class="hunt-meta">${searchCount} ${escapeHtml(t('linksReady'))}</span></div><div class="shopping-actions"><button type="button" class="primary-shop-btn" id="huntAllParts">${escapeHtml(t('searchAllStores'))}</button><span>${escapeHtml(t('referenceFallback'))}</span></div></div>
+  <div class="enhance-card savings-card"><div class="enhance-head"><div><span class="enhance-kicker">${escapeHtml(t('saveMoney'))}</span><strong>${escapeHtml(t('compatibleSwap'))}</strong></div></div>${(result.cheaper_alternatives||[]).length?`<div class="swap-grid">${result.cheaper_alternatives.slice(0,4).map(a=>`<div class="swap-card"><span>${escapeHtml(a.category)}</span><strong>${escapeHtml(a.name)}</strong><div><b>${fmtMoney(a.price,a.currency)}</b><small>${escapeHtml(t('saves'))} ${fmtMoney(a.savings,a.currency)}</small></div><small>${escapeHtml(a.why||'')}</small></div>`).join('')}</div>`:`<div class="no-swap">${escapeHtml(t('noSafeSwap'))}</div>`}</div>`;
 }
 
 function bindHuntButtons(result){
