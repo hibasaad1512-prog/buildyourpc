@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 import json
 import os
 import secrets
@@ -15,6 +16,7 @@ import requests
 
 from .live_prices import BestBuyClient, EbayClient, LIVE_MAX_AGE_HOURS, fetch_jsonld_offer, best_matching_offers
 from .currency_config import CURRENCY_CONFIG, exported_config, get_currency
+from .marketplaces import marketplace_offers
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -25,6 +27,7 @@ DB_PATH = Path(os.getenv("BUILDYOURPC_DB_PATH", str(DATA_DIR / "buildyourpc.sqli
 CATALOG_PATH = DATA_DIR / "catalog.json"
 
 app = Flask(__name__, static_folder=str(ROOT / "frontend"), static_url_path="")
+logger = logging.getLogger(__name__)
 app.config["JSON_SORT_KEYS"] = False
 ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "*")
 CORS(app, resources={r"/api/*": {"origins": [x.strip() for x in ALLOWED_ORIGINS.split(",")] if ALLOWED_ORIGINS != "*" else "*"}})
@@ -37,6 +40,7 @@ ADMIN_TOKEN = os.getenv("ADMIN_TOKEN", "")
 LIVE_PRICE_SYNC_ENABLED = os.getenv("LIVE_PRICE_SYNC_ENABLED", "1") != "0"
 FX_API_ENABLED = os.getenv("FX_API_ENABLED", "1") != "0"
 FX_CACHE_HOURS = float(os.getenv("FX_CACHE_HOURS", "24"))
+FX_BOOTSTRAP_DONE = False
 
 
 FX_TO_USD = {code: float(cfg["rateToUSD"]) for code, cfg in CURRENCY_CONFIG.items()}
@@ -44,8 +48,11 @@ FX_TO_USD = {code: float(cfg["rateToUSD"]) for code, cfg in CURRENCY_CONFIG.item
 
 def db() -> sqlite3.Connection:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH)
+    con = sqlite3.connect(DB_PATH, timeout=12, isolation_level=None)
     con.row_factory = sqlite3.Row
+    con.execute("PRAGMA busy_timeout=12000")
+    con.execute("PRAGMA foreign_keys=ON")
+    con.execute("PRAGMA journal_mode=WAL")
     return con
 
 
@@ -169,6 +176,15 @@ def refresh_fx_rates() -> dict[str, float]:
         return _cached_fx_from_eur()
 
 
+def ensure_fx_cache() -> None:
+    global FX_BOOTSTRAP_DONE
+    if FX_BOOTSTRAP_DONE or not FX_API_ENABLED:
+        return
+    FX_BOOTSTRAP_DONE = True
+    if len(_cached_fx_from_eur()) < 5:
+        refresh_fx_rates()
+
+
 def _eur_to_usd() -> float:
     rates = _cached_fx_from_eur()
     return float(rates.get("USD", FX_TO_USD.get("EUR", 0.92) and (1.0 / FX_TO_USD["EUR"])))
@@ -181,6 +197,7 @@ def _validated_currency(currency: str) -> str:
 
 
 def usd_from_local(value: float, currency: str) -> float:
+    ensure_fx_cache()
     code = _validated_currency(currency)
     if code == "USD":
         return float(value)
@@ -191,6 +208,7 @@ def usd_from_local(value: float, currency: str) -> float:
 
 
 def local_from_usd(value: float, currency: str) -> float:
+    ensure_fx_cache()
     code = _validated_currency(currency)
     if code == "USD":
         return float(value)
@@ -283,19 +301,21 @@ def current_offers(product: dict[str, Any], country: str, currency: str) -> list
             }
         )
     live = [o for o in offers if o["live"]]
-    if live:
-        return sorted(live, key=lambda x: x["price"])
-    # Reference/demo offers remain available when no fresh live offer exists.
-    offers = []
+    # Always expose market choices even when a live feed exists. Live offers are
+    # ranked first; reference and marketplace search links remain clearly labeled.
+    reference: list[dict] = []
+    existing_names = {str(o.get("store") or "") for o in offers}
     query = quote_plus(product["name"])
     for store in product.get("stores", []):
         market_ok = not store.get("countries") or country in store["countries"] or "*" in store["countries"]
         if not market_ok:
             continue
         price = fmt_money(float(store["usd_price"]), currency)
-        offers.append(
+        name = store["name"]
+        existing_names.add(name)
+        reference.append(
             {
-                "store": store["name"],
+                "store": name,
                 "price": price,
                 "currency": currency,
                 "url": store.get("url") or f"{store.get('base_url', 'https://www.google.com/search')}?q={query}",
@@ -307,7 +327,10 @@ def current_offers(product: dict[str, Any], country: str, currency: str) -> list
                 "live": False,
             }
         )
-    return sorted(offers, key=lambda x: x["price"])
+    marketplace = marketplace_offers(product_name=product["name"], country=country, currency=currency, existing_names=existing_names)
+    if live:
+        return sorted(live, key=lambda x: float(x.get("price") or 0)) + reference[:2] + marketplace
+    return sorted(reference, key=lambda x: float(x.get("price") or 0)) + marketplace
 
 
 def market_price_usd(product: dict[str, Any], country: str, currency: str) -> tuple[float, bool, str]:
@@ -811,7 +834,14 @@ def recommend():
     if budget < currency_cfg["minimum"] or budget > currency_cfg["maximum"]:
         return jsonify({"error": {"code": "BUDGET_OUT_OF_RANGE", "message": f"Budget must be between {currency_cfg['minimum']} and {currency_cfg['maximum']} {payload['currency']}."}}), 400
     payload["country"] = str(payload.get("country", "US")).upper()
-    base = recommend_build(payload)
+    try:
+        base = recommend_build(payload)
+    except ValueError as exc:
+        logger.warning("recommend validation/build error: %s", exc, extra={"country": payload.get("country"), "currency": payload.get("currency")})
+        return jsonify({"error": {"code": "BUILD_UNAVAILABLE", "message": str(exc)}}), 422
+    except (KeyError, TypeError, IndexError) as exc:
+        logger.exception("recommend data error for country=%s currency=%s", payload.get("country"), payload.get("currency"))
+        return jsonify({"error": {"code": "BUILD_DATA_ERROR", "message": "The build catalog could not produce a valid recommendation."}}), 500
     # Alternative views use the same constraint set but reweight the engine rather than maxing raw FPS blindly.
     alternatives = [choose_desktop(payload, usd_from_local(budget, payload["currency"]), m) for m in ["smart", "speed", "beast"]] if base["type"] == "desktop" else [base]
     base["alternatives"] = alternatives
