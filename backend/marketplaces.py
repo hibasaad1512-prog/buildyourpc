@@ -9,6 +9,15 @@ def _url(template: str, query: str) -> str:
 # Search links only: these are user-facing marketplace choices, not scraped prices.
 # Live prices still come from permitted feeds/APIs and are kept separate.
 MARKETPLACES = [
+    {"name": "Avito", "countries": {"MA"}, "url": "https://www.avito.ma/fr/maroc/{q}"},
+    {"name": "Ouedkniss", "countries": {"DZ"}, "url": "https://www.ouedkniss.com/annonces?keywords={q}"},
+    {"name": "Tayara", "countries": {"TN"}, "url": "https://www.tayara.tn/listings?keywords={q}"},
+    {"name": "Haraj", "countries": {"SA"}, "url": "https://haraj.com.sa/search/{q}"},
+    {"name": "Dubizzle", "countries": {"AE","EG","SA"}, "url": "https://dubizzle.{domain}/search?q={q}"},
+    {"name": "Leboncoin", "countries": {"FR"}, "url": "https://www.leboncoin.fr/recherche?text={q}"},
+    {"name": "Kleinanzeigen", "countries": {"DE"}, "url": "https://www.kleinanzeigen.de/s-{q}/k0"},
+    {"name": "Wallapop", "countries": {"ES"}, "url": "https://es.wallapop.com/app/search?keywords={q}"},
+    {"name": "Subito", "countries": {"IT"}, "url": "https://www.subito.it/annunci-italia/vendita/usato/?q={q}"},
     {"name": "Facebook Marketplace", "countries": "*", "url": "https://www.facebook.com/marketplace/search/?query={q}"},
     {"name": "eBay", "countries": "*", "url": "https://www.ebay.com/sch/i.html?_nkw={q}"},
     {"name": "AliExpress", "countries": "*", "url": "https://www.aliexpress.com/w/wholesale-{q}.html"},
@@ -52,14 +61,14 @@ MARKETPLACES = [
 # Country -> common retail domain used by global marketplace templates above.
 DOMAINS = {
     "MA": {"amazon": "amazon.ma", "jumia": "ma", "jiji": "ma"},
-    "EG": {"amazon": "amazon.eg", "jumia": "eg", "jiji": "eg", "noon": "egypt-en"},
     "NG": {"amazon": "amazon.com", "jumia": "ng", "jiji": "ng"},
     "KE": {"amazon": "amazon.com", "jumia": "ke", "jiji": "ke"},
     "GH": {"amazon": "amazon.com", "jumia": "gh", "jiji": "gh"},
     "CI": {"jumia": "ci"}, "UG": {"jumia": "ug", "jiji": "ug"}, "TZ": {"jiji": "co.tz"},
-    "AE": {"amazon": "amazon.ae", "noon": "uae-en"},
-    "SA": {"amazon": "amazon.sa", "noon": "saudi-en"},
+    "AE": {"amazon": "amazon.ae", "noon": "uae-en", "dubizzle": "uae"},
+    "SA": {"amazon": "amazon.sa", "noon": "saudi-en", "dubizzle": "sa"},
     "ZA": {"amazon": "amazon.com", "jiji": "co.za"},
+    "EG": {"amazon": "amazon.eg", "jumia": "eg", "jiji": "eg", "noon": "egypt-en", "dubizzle": "eg"},
     "AR": {"mercadolibre": "com.ar"}, "BO": {"mercadolibre": "com.bo"}, "BR": {"mercadolibre": "com.br"},
     "CL": {"mercadolibre": "cl"}, "CO": {"mercadolibre": "com.co"}, "CR": {"mercadolibre": "co.cr"},
     "DO": {"mercadolibre": "com.do"}, "EC": {"mercadolibre": "com.ec"}, "GT": {"mercadolibre": "com.gt"},

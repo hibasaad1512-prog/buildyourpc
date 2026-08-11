@@ -48,11 +48,11 @@ FX_TO_USD = {code: float(cfg["rateToUSD"]) for code, cfg in CURRENCY_CONFIG.item
 
 def db() -> sqlite3.Connection:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH, timeout=12, isolation_level=None)
+    con = sqlite3.connect(DB_PATH, timeout=15, isolation_level=None, check_same_thread=False)
     con.row_factory = sqlite3.Row
-    con.execute("PRAGMA busy_timeout=12000")
+    con.execute("PRAGMA busy_timeout=15000")
     con.execute("PRAGMA foreign_keys=ON")
-    con.execute("PRAGMA journal_mode=WAL")
+    con.execute("PRAGMA synchronous=NORMAL")
     return con
 
 
@@ -119,6 +119,11 @@ def init_db() -> None:
         );
         """
     )
+    try:
+        con.execute("PRAGMA journal_mode=WAL")
+        con.execute("PRAGMA synchronous=NORMAL")
+    except sqlite3.DatabaseError:
+        logger.warning("SQLite WAL mode could not be enabled; continuing with the configured journal mode.")
     con.commit()
     con.close()
 
@@ -197,10 +202,10 @@ def _validated_currency(currency: str) -> str:
 
 
 def usd_from_local(value: float, currency: str) -> float:
-    ensure_fx_cache()
     code = _validated_currency(currency)
-    if code == "USD":
+    if code == 'USD':
         return float(value)
+    ensure_fx_cache()
     rates = _cached_fx_from_eur()
     if code in rates and "USD" in rates:
         return (float(value) / rates[code]) * rates["USD"]
@@ -208,10 +213,10 @@ def usd_from_local(value: float, currency: str) -> float:
 
 
 def local_from_usd(value: float, currency: str) -> float:
-    ensure_fx_cache()
     code = _validated_currency(currency)
-    if code == "USD":
+    if code == 'USD':
         return float(value)
+    ensure_fx_cache()
     rates = _cached_fx_from_eur()
     if code in rates and "USD" in rates:
         return (float(value) / rates["USD"]) * rates[code]
@@ -271,12 +276,16 @@ enrich_catalog()
 
 def current_offers(product: dict[str, Any], country: str, currency: str) -> list[dict[str, Any]]:
     offers: list[dict[str, Any]] = []
-    con = db()
-    rows = con.execute(
-        "SELECT store, price, currency, availability, product_url, affiliate_url, captured_at, source FROM prices WHERE product_id = ? AND country IN (?, '*') ORDER BY price ASC",
-        (product["id"], country),
-    ).fetchall()
-    con.close()
+    try:
+        con = db()
+        rows = con.execute(
+            "SELECT store, price, currency, availability, product_url, affiliate_url, captured_at, source FROM prices WHERE product_id = ? AND country IN (?, '*') ORDER BY price ASC",
+            (product["id"], country),
+        ).fetchall()
+        con.close()
+    except sqlite3.DatabaseError as exc:
+        logger.warning("price lookup failed for %s/%s: %s", product.get("id"), country, exc)
+        rows = []
     now = datetime.now(timezone.utc)
     for row in rows:
         captured_at = row["captured_at"]
@@ -634,7 +643,15 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
 
 
 def build_single_device(need: dict[str, Any], usd_budget: float, device: str) -> dict[str, Any]:
-    candidates = with_market_prices(catalog_products(device), need.get("country", "US"), need.get("currency", "USD"))
+    # Portable devices are products, not collections of desktop components.
+    # Keep the laptop path explicitly constrained to the laptop category.
+    if device == "laptop":
+        source = catalog_products("laptop", "laptop")
+    elif device in {"prebuilt", "used"}:
+        source = catalog_products(device, device) or catalog_products(device)
+    else:
+        source = catalog_products(device)
+    candidates = with_market_prices(source, need.get("country", "US"), need.get("currency", "USD"))
     if not candidates:
         raise ValueError(f"No reference catalog items for {device} yet.")
     ranked = sorted(candidates, key=lambda p: score_product(p, need, usd_budget), reverse=True)
@@ -658,6 +675,11 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
                    "performance": chosen.get("performance", 0), "why": chosen.get("why", ""), "offers": offers,
                    "specs": {k: chosen.get(k) for k in ["condition", "warranty_months"] if k in chosen}}],
         "reasons": reasons, "fps_estimate": estimate,
+        "device_details": {
+            "is_portable_product": device == "laptop",
+            "product_only": device in {"laptop", "prebuilt", "used"},
+            "category": "laptop" if device == "laptop" else device,
+        },
         "data_mode": "reference-demo" if not any(o.get("source") != "reference-demo" for o in offers) else "live-plus-reference",
     }
 
@@ -666,7 +688,7 @@ def recommend_build(payload: dict[str, Any]) -> dict[str, Any]:
     budget = float(payload.get("budget", 0))
     currency = str(payload.get("currency", "USD")).upper()
     usd_budget = usd_from_local(budget, currency)
-    device = payload.get("device_type", "not_sure")
+    device = str(payload.get("device_type", "not_sure") or "not_sure").lower()
     # Unknown device is decided by a compact heuristic, not by AI.
     if device == "not_sure":
         if "Laptop" in payload.get("preferences", []) or payload.get("portability"):
@@ -677,16 +699,22 @@ def recommend_build(payload: dict[str, Any]) -> dict[str, Any]:
         device = "desktop"
     if device == "desktop":
         return choose_desktop(payload, usd_budget, "smart")
-    return build_single_device(payload, usd_budget, device)
+    if device in {"laptop", "prebuilt", "used"}:
+        return build_single_device(payload, usd_budget, device)
+    raise ValueError("Unsupported device type. Choose desktop, laptop, prebuilt, or used.")
 
 
 def event(name: str, *, build_id: str | None = None, product_id: str | None = None, country: str | None = None, meta: dict | None = None) -> None:
-    con = db()
-    con.execute(
-        "INSERT INTO events(event_name,build_id,product_id,country,meta) VALUES(?,?,?,?,?)",
-        (name, build_id, product_id, country, json.dumps(meta or {})),
-    )
-    con.commit(); con.close()
+    try:
+        con = db()
+        con.execute(
+            "INSERT INTO events(event_name,build_id,product_id,country,meta) VALUES(?,?,?,?,?)",
+            (name, build_id, product_id, country, json.dumps(meta or {})),
+        )
+        con.commit(); con.close()
+    except sqlite3.DatabaseError as exc:
+        # Analytics must never turn a successful user action into a 500.
+        logger.warning("event logging skipped for %s: %s", name, exc)
 
 
 def _store_price_rows(product_id: str, offers: list[Any], country: str) -> int:
@@ -802,7 +830,11 @@ def explore():
     con.close()
     live = []
     for row in rows:
-        payload = json.loads(row["payload"])
+        try:
+            payload = json.loads(row["payload"])
+        except (TypeError, ValueError):
+            logger.warning("Skipping malformed saved build payload %s", row["id"])
+            continue
         live.append({
             "id": row["id"], "created_at": row["created_at"], "views": row["views"], "shares": row["shares"],
             "title": payload.get("title", "Shared build"), "total": payload.get("total"), "currency": payload.get("currency", "USD"),
@@ -834,14 +866,27 @@ def recommend():
     if budget < currency_cfg["minimum"] or budget > currency_cfg["maximum"]:
         return jsonify({"error": {"code": "BUDGET_OUT_OF_RANGE", "message": f"Budget must be between {currency_cfg['minimum']} and {currency_cfg['maximum']} {payload['currency']}."}}), 400
     payload["country"] = str(payload.get("country", "US")).upper()
+    for key in ("use_cases", "games", "preferences", "existing_parts"):
+        if payload.get(key) is None:
+            payload[key] = []
+        elif not isinstance(payload.get(key), list):
+            return jsonify({"error": {"code": "INVALID_FIELD", "message": f"{key} must be a list."}}), 400
+    if payload.get("target_fps") not in (None, ""):
+        try:
+            payload["target_fps"] = int(payload["target_fps"])
+        except (TypeError, ValueError):
+            return jsonify({"error": {"code": "INVALID_FPS", "message": "Target FPS must be a number."}}), 400
     try:
         base = recommend_build(payload)
     except ValueError as exc:
         logger.warning("recommend validation/build error: %s", exc, extra={"country": payload.get("country"), "currency": payload.get("currency")})
         return jsonify({"error": {"code": "BUILD_UNAVAILABLE", "message": str(exc)}}), 422
-    except (KeyError, TypeError, IndexError) as exc:
-        logger.exception("recommend data error for country=%s currency=%s", payload.get("country"), payload.get("currency"))
-        return jsonify({"error": {"code": "BUILD_DATA_ERROR", "message": "The build catalog could not produce a valid recommendation."}}), 500
+    except (KeyError, TypeError, IndexError, sqlite3.DatabaseError) as exc:
+        logger.exception("recommend data/database error for country=%s currency=%s", payload.get("country"), payload.get("currency"))
+        return jsonify({"error": {"code": "BUILD_DATA_ERROR", "message": "The build catalog could not produce a valid recommendation. Please retry."}}), 500
+    except Exception:
+        logger.exception("unexpected recommendation failure for country=%s currency=%s device=%s", payload.get("country"), payload.get("currency"), payload.get("device_type"))
+        return jsonify({"error": {"code": "RECOMMENDATION_ERROR", "message": "The recommendation service failed safely. Please retry."}}), 500
     # Alternative views use the same constraint set but reweight the engine rather than maxing raw FPS blindly.
     alternatives = [choose_desktop(payload, usd_from_local(budget, payload["currency"]), m) for m in ["smart", "speed", "beast"]] if base["type"] == "desktop" else [base]
     base["alternatives"] = alternatives
@@ -881,7 +926,7 @@ def share_build(build_id: str):
     con = db()
     row = con.execute("SELECT id FROM builds WHERE id=?", (build_id,)).fetchone()
     if not row:
-        con.close(); return jsonify({"error": "Build not found"}), 404
+        con.close(); return jsonify({"error": {"code": "NOT_FOUND", "message": "Build not found"}}), 404
     con.execute("UPDATE builds SET shares = shares + 1 WHERE id=?", (build_id,))
     con.commit(); con.close(); event("build_shared", build_id=build_id)
     return jsonify({"ok": True})

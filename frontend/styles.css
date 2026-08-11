@@ -27,3 +27,12 @@ html,body{max-width:100%;overflow-x:hidden}
 [dir="rtl"] .build-actions{flex-direction:row-reverse}
 [dir="rtl"] .choice-card,[dir="rtl"] .tag{direction:rtl}
 [dir="rtl"] .offer-link{direction:rtl}
+
+/* Portable-product result: laptops are presented as one purchasable product,
+   never as a desktop-component grid. */
+.portable-product-card{border:1px solid var(--line);background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(155,92,255,.045));border-radius:20px;padding:18px;margin-top:14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:start}
+.portable-product-card h4{font:800 24px Manrope;letter-spacing:-.035em;margin:7px 0 6px}
+.portable-product-card p{margin:0;color:#918a97;font-size:12px;max-width:720px}
+.portable-price{font:800 24px Manrope;white-space:nowrap}
+.portable-offers{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+@media(max-width:700px){.portable-product-card{grid-template-columns:1fr}.portable-price{font-size:22px}.portable-offers{grid-template-columns:1fr}}
