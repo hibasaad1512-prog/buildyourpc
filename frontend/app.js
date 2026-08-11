@@ -23,6 +23,9 @@ const q = (sel, root=document) => root.querySelector(sel);
 const qa = (sel, root=document) => [...root.querySelectorAll(sel)];
 let config = {countries:[], languages:[], games:[], currencies:{}, kofi:'https://ko-fi.com/simbawwyy00'};
 let busyActions = new Set();
+let backendWarmPromise = null;
+const CONFIG_CACHE_KEY = 'byp_config_v7';
+const CONFIG_CACHE_TTL = 24 * 60 * 60 * 1000;
 
 const TRANSLATIONS = {
   en: {
@@ -208,15 +211,55 @@ async function readResponse(r){
   }
   if(!r.ok){
     const message=data?.error?.message||data?.error||data?.message||(`${r.status} ${r.statusText}`.trim())||t('genericError');
-    const err=new Error(message);err.status=r.status;err.code=data?.error?.code||'HTTP_ERROR';throw err;
+    const err=new Error(message);err.status=r.status;err.code=data?.error?.code||(`HTTP_${r.status}`);throw err;
   }
   if(!raw.trim()) return {};
   if(data===null){console.error('BuildYourPC API returned a non-JSON success response',{status:r.status,contentType:type,bodyPreview:raw.slice(0,300)});const err=new Error(t('genericError'));err.code='INVALID_JSON_RESPONSE';err.status=r.status;throw err;}
   return data;
 }
 async function apiFetch(path, options={}){
-  let r; try{r=await fetch(API_BASE+path,{...options,headers:{Accept:'application/json',...(options.headers||{})}})}catch(e){const err=new Error(t('offline'));err.code='NETWORK_ERROR';throw err}
-  return readResponse(r);
+  const {timeoutMs=15000,...fetchOptions}=options;
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    const r=await fetch(API_BASE+path,{...fetchOptions,signal:controller.signal,headers:{Accept:'application/json',...(fetchOptions.headers||{})}});
+    return await readResponse(r);
+  }catch(e){
+    if(e?.status) throw e;
+    const err=new Error(e?.name==='AbortError'?t('offline'):t('offline'));
+    err.code=e?.name==='AbortError'?'NETWORK_TIMEOUT':'NETWORK_ERROR';
+    throw err;
+  }finally{clearTimeout(timer)}
+}
+
+async function warmBackend(timeoutMs=75000){
+  if(backendWarmPromise)return backendWarmPromise;
+  backendWarmPromise=(async()=>{
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try{
+      const r=await fetch(API_BASE+'/api/health',{method:'GET',cache:'no-store',headers:{Accept:'application/json'},signal:controller.signal});
+      if(!r.ok) throw new Error(`HTTP ${r.status}`);
+      return true;
+    }finally{
+      clearTimeout(timer);
+      backendWarmPromise=null;
+    }
+  })().catch(e=>{console.warn('backend warm-up failed',e);return false;});
+  return backendWarmPromise;
+}
+
+function readCachedConfig(){
+  try{
+    const raw=localStorage.getItem(CONFIG_CACHE_KEY);
+    if(!raw)return null;
+    const cached=JSON.parse(raw);
+    if(!cached?.savedAt||Date.now()-cached.savedAt>CONFIG_CACHE_TTL||!cached.config)return null;
+    return cached.config;
+  }catch{return null}
+}
+function cacheConfig(value){
+  try{localStorage.setItem(CONFIG_CACHE_KEY,JSON.stringify({savedAt:Date.now(),config:value}))}catch{}
 }
 function applyTranslations(){
   const set = (selector, key, html=false) => { const n=q(selector); if(n) html ? n.innerHTML=t(key) : n.textContent=t(key); };
@@ -299,8 +342,16 @@ async function loadExistingBuild(){
 }
 
 async function loadConfig(){
-  try{config=await apiFetch('/api/config');}
-  catch(e){console.error('config load failed',e);toast(localizedApiError(e));config={countries:[{code:'US',name:'United States',currency:'USD'}],languages:[{code:'en',name:'English',native:'English',dir:'ltr'}],games:['Fortnite','Warzone','GTA V','Minecraft'],currencies:{USD:{symbol:'$',locale:'en-US',decimalDigits:0,minimum:150,maximum:10000}},kofi:'https://ko-fi.com/simbawwyy00'}}
+  const cachedConfig=readCachedConfig();
+  if(cachedConfig){
+    config=cachedConfig;
+  }else{
+    try{config=await apiFetch('/api/config',{timeoutMs:75000});cacheConfig(config);}
+    catch(e){console.error('config load failed',e);toast(localizedApiError(e));config={countries:[{code:'US',name:'United States',currency:'USD'}],languages:[{code:'en',name:'English',native:'English',dir:'ltr'}],games:['Fortnite','Warzone','GTA V','Minecraft'],currencies:{USD:{symbol:'$',locale:'en-US',decimalDigits:0,minimum:150,maximum:10000}},kofi:'https://ko-fi.com/simbawwyy00'}}
+  }
+  // Warm a sleeping Render instance in the background. This is one request per page
+  // session, not a keep-alive loop, so it does not try to defeat Render's free-plan sleep.
+  if(cachedConfig)warmBackend();
   const savedCountry=(()=>{try{return localStorage.getItem('byp_country')}catch{return null}})();
   const savedLanguage=(()=>{try{return localStorage.getItem('byp_language')}catch{return null}})();
   if(savedCountry && config.countries.some(x=>x.code===savedCountry)) state.country=savedCountry;
@@ -349,7 +400,7 @@ function syncDeviceSpecificUI(){
   if(!show) return;
   qa('[data-lpref]').forEach(b=>b.classList.toggle('selected',state.laptop_preferences.includes(b.dataset.lpref)));
 }
-qa('[data-device]').forEach(b=>b.onclick=()=>{qa('[data-device]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');state.device_type=b.dataset.device;syncDeviceSpecificUI();if(state.device_type==='not_sure')toast(t('chooseBest'))})
+qa('[data-device]').forEach(b=>b.onclick=()=>{qa('[data-device]').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');state.device_type=b.dataset.device;syncDeviceSpecificUI();warmBackend();if(state.device_type==='not_sure')toast(t('chooseBest'))})
 qa('[data-lpref]').forEach(b=>b.onclick=()=>{const k=b.dataset.lpref;state.laptop_preferences=state.laptop_preferences.includes(k)?state.laptop_preferences.filter(x=>x!==k):[...state.laptop_preferences,k];syncDeviceSpecificUI();});
 
 qa('[data-goal]').forEach(b=>b.onclick=()=>{toggleChoice(b);state.use_cases=qa('[data-goal].selected').map(x=>x.dataset.goal)})
@@ -370,7 +421,21 @@ async function runRecommendation(){
   busyActions.add('recommend'); const btn=el('nextBtn'); btn.disabled=true; btn.innerHTML=t('matching')+' <span>…</span>';
   try{
     const requestPayload={device_type:state.device_type,budget:Number(state.budget),currency:state.currency,country:state.country,use_cases:state.use_cases,games:state.games,preferences:state.preferences,existing_parts:state.existing_parts,target_fps:state.target_fps,resolution:state.resolution,laptop_preferences:state.laptop_preferences};
-    state.result=await apiFetch('/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(requestPayload)});
+    // If Render has been sleeping, wake it before the expensive recommendation request.
+    // The promise is shared with the page-level warm-up, so we do not send duplicate wake requests.
+    await warmBackend();
+    let lastError=null;
+    for(let attempt=0;attempt<2;attempt++){
+      try{
+        state.result=await apiFetch('/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(requestPayload),timeoutMs:75000});
+        lastError=null; break;
+      }catch(e){
+        lastError=e;
+        if(attempt===0 && ['NETWORK_ERROR','NETWORK_TIMEOUT','HTTP_502','HTTP_503','HTTP_504'].includes(String(e.code||''))){await new Promise(r=>setTimeout(r,800));continue;}
+        break;
+      }
+    }
+    if(lastError) throw lastError;
     state.preset='smart';renderResults();document.getElementById('results').scrollIntoView({behavior:'smooth'});
   }
   catch(e){console.error('recommend failed',e);toast(localizedApiError(e));}
@@ -399,6 +464,7 @@ function renderResultPreset(result){
         ['cpu','cpu_model'],['gpu','gpu_model'],['ram','ram_gb'],['storage','storage_gb'],['display','display_size'],['refresh','refresh_hz'],['weight','weight_kg'],['battery','battery_wh'],['os','os'],['screen','screen_type']
       ].filter(([k,key])=>product.specs?.[key]!=null).map(([k,key])=>`<div class="laptop-spec"><span>${escapeHtml(laptopSpecLabel(k))}</span><strong>${escapeHtml(String(product.specs[key]))}${['ram_gb','storage_gb','display_size','refresh_hz','weight_kg','battery_wh'].includes(key)?({'ram_gb':' GB','storage_gb':' GB','display_size':' in','refresh_hz':' Hz','weight_kg':' kg','battery_wh':' Wh'}[key]||''):''}</strong></div>`).join('')}</div></div><div class="portable-price">${fmtMoney(product.price,product.currency)}</div><div class="portable-offers">${(product.offers||[]).slice(0,8).map(o=>{const live=!!o.live;const noPrice=o.price==null;const label=live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference');return `<a class="offer-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span class="offer-dot ${live?'on':''}"></span>${escapeHtml(o.store)}${noPrice?'':` · ${fmtMoney(o.price,o.currency)}`} <small class="offer-source">${label}</small>${noPrice?`<small class="offer-action">${t('viewStore')}</small>`:'→'}</a>`}).join('')}</div></div>
       <div class="reason-strip">${reasonKeys.map((k,i)=>`<div class="reason-box"><strong>${[t('whyFits'),t('goalCheck'),t('moneyMove')][i]}</strong>${escapeHtml(t(k))}</div>`).join('')}</div>
+      ${(result.nearby_options||[]).length?`<div class="nearby-options"><div class="nearby-head"><strong>${t('nearbyOptions')}</strong><span>${t('nearbySub')}</span></div><div class="nearby-grid">${result.nearby_options.slice(0,3).map(o=>`<div class="nearby-card"><strong>${escapeHtml(o.name)}</strong><span>${fmtMoney(o.price,o.currency)}</span><small>${escapeHtml(o.why||'')}</small></div>`).join('')}</div></div>`:''}
       <div class="build-footer"><div><span class="muted">${t('estimatedTotal')}</span><div class="build-total">${fmtMoney(result.total,result.currency)}</div><small class="data-note">${result.budget_match==='closest-available'?`${escapeHtml(t('closestAvailable'))} · ${escapeHtml(t('budgetDelta'))}: ${fmtMoney(result.budget_delta,result.currency)}`:escapeHtml(t('budgetMatchWithin'))}</small><small id="dataModeNote" class="data-note"></small></div><div class="build-actions"><button class="small-btn" id="saveBuild">${t('save')}</button><button class="small-btn" id="shareBuild">${t('share')}</button><button class="small-btn" id="copyBuild">${t('copy')}</button></div></div>`;
     qa('.preset-tab').forEach(x=>x.classList.remove('active'));q('[data-preset="smart"]')?.classList.add('active');
     el('heroFit').textContent=`${result.performance_fit}%`; el('heroBudget').textContent=fmtMoney(result.query?.budget ?? state.budget,result.query?.currency || state.currency);
@@ -407,6 +473,7 @@ function renderResultPreset(result){
   card.innerHTML=`<div class="result-hero"><div><span class="section-kicker">${t('matchReady')}</span><h3>${escapeHtml(title)}</h3><p>${escapeHtml(result.tagline||t('matchSub'))}</p><div class="result-metrics"><span>${labels.value} <b>${result.value_score}</b></span><span>${labels.future} <b>${result.future_score}</b></span>${result.fps_estimate?`<span>${labels.fps} <b>${result.fps_estimate.low}–${result.fps_estimate.high}</b></span>`:''}</div></div><div class="score-ring"><div><strong>${result.performance_fit}</strong><span>${labels.fit}</span></div></div></div>
   <div class="parts-grid">${(result.parts||[]).map(p=>`<div class="part-card"><div class="part-top"><span class="part-cat">${escapeHtml(p.category)}</span><span class="part-price">${fmtMoney(p.price,p.currency)}</span></div><h4>${escapeHtml(p.name)}</h4><p>${escapeHtml(p.why)}</p><div class="offers">${(p.offers||[]).slice(0,5).map(o=>{const live=!!o.live; const noPrice=o.price==null; const label=live?t('live'):o.source==='marketplace-search'?t('marketplace'):t('reference'); const meta=o.captured_at?` · ${new Date(o.captured_at).toLocaleDateString()}`:''; return `<a class="offer-link" href="${escapeHtml(o.url)}" target="_blank" rel="noopener noreferrer${o.affiliate_ready?' sponsored':''}"><span class="offer-dot ${live?'on':''}"></span>${escapeHtml(o.store)}${noPrice?'':` · ${fmtMoney(o.price,o.currency)}`} <small class="offer-source">${label}${meta}</small> ${noPrice?`<small class="offer-action">${t('viewStore')}</small>`:'→'}</a>`}).join('')}</div></div>`).join('')}</div>
   <div class="reason-strip">${reasonKeys.map((k,i)=>`<div class="reason-box"><strong>${[t('whyFits'),t('goalCheck'),t('moneyMove')][i]}</strong>${escapeHtml(t(k))}</div>`).join('')}</div>
+  ${(result.nearby_options||[]).length?`<div class="nearby-options"><div class="nearby-head"><strong>${t('nearbyOptions')}</strong><span>${t('nearbySub')}</span></div><div class="nearby-grid">${result.nearby_options.slice(0,3).map(o=>`<div class="nearby-card"><strong>${escapeHtml(o.name)}</strong><span>${fmtMoney(o.price,o.currency)}</span><small>${escapeHtml(o.why||'')}</small></div>`).join('')}</div></div>`:''}
   <div class="build-footer"><div><span class="muted">${t('estimatedTotal')}</span><div class="build-total">${fmtMoney(result.total,result.currency)}</div><small class="data-note">${result.budget_match==='closest-available'?`${escapeHtml(t('closestAvailable'))} · ${escapeHtml(t('budgetDelta'))}: ${fmtMoney(result.budget_delta,result.currency)}`:escapeHtml(t('budgetMatchWithin'))}</small><small id="dataModeNote" class="data-note"></small></div><div class="build-actions"><button class="small-btn" id="saveBuild">${t('save')}</button><button class="small-btn" id="shareBuild">${t('share')}</button><button class="small-btn" id="copyBuild">${t('copy')}</button></div></div>`;
   qa('.preset-tab').forEach(x=>x.classList.remove('active'));const active=mode==='smart'?q('[data-preset="smart"]'):mode==='speed'?q('[data-preset="speed"]'):q('[data-preset="beast"]');active?.classList.add('active');
   el('heroFit').textContent=`${result.performance_fit}%`;el('heroBudget').textContent=fmtMoney(result.query?.budget ?? state.budget,result.query?.currency || state.currency);

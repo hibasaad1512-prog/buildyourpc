@@ -343,7 +343,11 @@ def current_offers(product: dict[str, Any], country: str, currency: str) -> list
                 "live": False,
             }
         )
-    marketplace = marketplace_offers(product_name=product["name"], country=country, currency=currency, existing_names=existing_names)
+    try:
+        marketplace = marketplace_offers(product_name=product["name"], country=country, currency=currency, existing_names=existing_names)
+    except Exception as exc:
+        logger.warning("marketplace link generation failed for %s/%s: %s", product.get("id"), country, exc)
+        marketplace = []
     if live:
         return sorted(live, key=lambda x: float(x.get("price") or 0)) + reference[:2] + marketplace
     return sorted(reference, key=lambda x: float(x.get("price") or 0)) + marketplace
@@ -697,6 +701,19 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
         "For used/refurbished options, verify seller history, warranty, battery health and return policy before buying.",
         "Live market feeds should replace reference offers before public launch in each country.",
     ]
+    nearby_options = []
+    for alt in ranked:
+        if alt.get("id") == chosen.get("id"):
+            continue
+        alt_price = float(alt.get("usd_price", 0))
+        if not nearby_options or len(nearby_options) < 3:
+            nearby_options.append({
+                "id": alt["id"], "name": alt["name"], "brand": alt.get("brand", ""),
+                "price": round(local_from_usd(alt_price, need.get("currency", "USD")), 2),
+                "currency": need.get("currency", "USD"), "performance": alt.get("performance", 0),
+                "value": alt.get("value", 0), "why": alt.get("why", ""),
+                "offers": current_offers(alt, need.get("country", "US"), need.get("currency", "USD")),
+            })
     if budget_match == "closest-available":
         reasons.insert(1, f"No catalog product matched the exact target budget; the engine selected the closest available option (about {budget_delta_local} away in the selected currency).")
     return {
@@ -709,7 +726,7 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
                    "price": round(local_from_usd(price, need.get("currency", "USD")), 2), "currency": need.get("currency", "USD"),
                    "performance": chosen.get("performance", 0), "why": chosen.get("why", ""), "offers": offers,
                    "specs": {k: chosen.get(k) for k in ["condition", "warranty_months"] if k in chosen}}],
-        "reasons": reasons, "fps_estimate": estimate,
+        "reasons": reasons, "fps_estimate": estimate, "nearby_options": nearby_options,
         "device_details": {
             "is_portable_product": device == "laptop",
             "product_only": device in {"laptop", "prebuilt", "used"},
@@ -723,6 +740,117 @@ def build_single_device(need: dict[str, Any], usd_budget: float, device: str) ->
             } if device == "laptop" else {},
         },
         "data_mode": "reference-demo" if not any(o.get("source") != "reference-demo" for o in offers) else "live-plus-reference",
+    }
+
+
+def _safe_reference_offer(product: dict[str, Any], currency: str) -> dict[str, Any]:
+    """Build one deterministic reference offer without DB, FX service or marketplace dependencies."""
+    price = round(local_from_usd(float(product.get("usd_price", 0)), currency), 2)
+    store = (product.get("stores") or [{"name": "Reference catalog", "base_url": "https://www.google.com/search?q=" + quote_plus(product.get("name", ""))}])[0]
+    return {
+        "store": store.get("name", "Reference catalog"),
+        "price": price,
+        "currency": currency,
+        "url": store.get("base_url") or ("https://www.google.com/search?q=" + quote_plus(product.get("name", ""))),
+        "availability": "Reference price — verify before buying",
+        "affiliate_ready": False,
+        "captured_at": None,
+        "source": "reference-fallback",
+        "stale": False,
+        "live": False,
+    }
+
+
+def _reference_fallback_recommendation(payload: dict[str, Any]) -> dict[str, Any]:
+    """Fail-open recommendation used only when the normal engine cannot complete.
+
+    It deliberately avoids SQLite price feeds, external providers and marketplace
+    generation. The user still gets a useful result instead of a generic 500.
+    """
+    device = str(payload.get("device_type", "desktop") or "desktop").lower()
+    if device == "not_sure":
+        device = "laptop" if payload.get("portability") or "Laptop" in payload.get("preferences", []) else "desktop"
+    currency = str(payload.get("currency", "USD")).upper()
+    budget = float(payload.get("budget", 0) or 0)
+    usd_budget = usd_from_local(budget, currency)
+    if device in {"laptop", "prebuilt", "used"}:
+        pool = catalog_products(device, device) or catalog_products(device)
+        if not pool:
+            raise ValueError(f"No reference catalog items for {device}.")
+        ranked = sorted(pool, key=lambda p: (abs(float(p.get("usd_price", 0)) - usd_budget), -float(p.get("value", 0))))
+        chosen = ranked[0]
+        local_price = round(local_from_usd(float(chosen.get("usd_price", 0)), currency), 2)
+        delta = round(abs(local_price - budget), 2)
+        nearby = []
+        for p in ranked[1:4]:
+            nearby.append({
+                "id": p["id"], "name": p["name"], "brand": p.get("brand", ""),
+                "price": round(local_from_usd(float(p.get("usd_price", 0)), currency), 2),
+                "currency": currency, "performance": p.get("performance", 0),
+                "value": p.get("value", 0), "why": p.get("why", ""),
+                "offers": [_safe_reference_offer(p, currency)],
+            })
+        result = {
+            "type": device, "title": f"Best-fit { {'laptop':'Laptop','prebuilt':'Prebuilt','used':'Used / Refurbished'}.get(device, 'Device') }",
+            "tagline": chosen.get("why", "Best fit from the reference catalog."),
+            "total": local_price, "currency": currency,
+            "budget_match": "within-budget" if local_price <= budget else "closest-available",
+            "budget_delta": delta, "performance_fit": min(99, int(chosen.get("performance", 0))),
+            "value_score": min(99, int(chosen.get("value", 0))), "future_score": min(99, int(chosen.get("upgrade_score", 0))),
+            "parts": [{
+                "id": chosen["id"], "category": device, "name": chosen["name"], "brand": chosen.get("brand", ""),
+                "price": local_price, "currency": currency, "performance": chosen.get("performance", 0),
+                "why": chosen.get("why", ""), "offers": [_safe_reference_offer(chosen, currency)],
+                "specs": {k: chosen.get(k) for k in ["condition", "warranty_months"] if k in chosen},
+            }],
+            "reasons": [
+                "Reference fallback used because the live recommendation path was temporarily unavailable.",
+                "The closest product to your budget was selected instead of failing the request.",
+            ],
+            "fps_estimate": fps_estimate(payload, chosen if device == "desktop" else None),
+            "data_mode": "reference-fallback",
+            "nearby_options": nearby,
+            "device_details": {
+                "is_portable_product": device == "laptop", "product_only": device in {"laptop", "prebuilt", "used"},
+                "category": "laptop" if device == "laptop" else device,
+                "specs": {k: chosen.get(k) for k in [
+                    "cpu_model", "gpu_model", "ram_gb", "storage_gb", "storage_type", "display_size",
+                    "display_resolution", "refresh_hz", "weight_kg", "battery_wh", "os", "screen_type", "warranty_months", "condition"
+                ] if chosen.get(k) not in (None, "")},
+            },
+        }
+        result["query"] = {"budget": budget, "currency": currency, "device_type": payload.get("device_type", device), "country": payload.get("country", "US")}
+        result["alternatives"] = [dict(result, alternatives=None)]
+        result["alternatives"][0].pop("alternatives", None)
+        return result
+    # Desktop fallback: deliberately simple and deterministic.
+    parts = []
+    categories = ["cpu", "motherboard", "ram", "gpu", "ssd", "psu", "case"]
+    remaining = usd_budget
+    for cat in categories:
+        pool = catalog_products("desktop", cat)
+        if not pool:
+            continue
+        chosen = min(pool, key=lambda p: float(p.get("usd_price", 0)))
+        if float(chosen.get("usd_price", 0)) <= remaining or not parts:
+            parts.append(chosen); remaining -= float(chosen.get("usd_price", 0))
+    if not parts:
+        raise ValueError("No reference desktop catalog items available.")
+    total_usd = sum(float(p.get("usd_price", 0)) for p in parts)
+    out_parts = [{
+        "id": p["id"], "category": p["category"], "name": p["name"], "brand": p.get("brand", ""),
+        "price": round(local_from_usd(float(p.get("usd_price", 0)), currency), 2), "currency": currency,
+        "performance": p.get("performance", 0), "why": p.get("why", ""), "offers": [_safe_reference_offer(p, currency)],
+        "specs": {k: p.get(k) for k in ["socket", "memory_type", "wattage", "recommended_psu_w"] if k in p},
+    } for p in parts]
+    return {
+        "type": "desktop", "title": "Reference Desktop", "tagline": "A safe reference build from the catalog.",
+        "total": round(local_from_usd(total_usd, currency), 2), "currency": currency,
+        "performance_fit": min(99, round(sum(float(p.get("performance", 0)) for p in parts) / len(parts))),
+        "value_score": min(99, round(sum(float(p.get("value", 0)) for p in parts) / len(parts))),
+        "future_score": min(99, round(sum(float(p.get("upgrade_score", 0)) for p in parts) / len(parts))),
+        "parts": out_parts, "reasons": ["Reference fallback used because the live recommendation path was temporarily unavailable."],
+        "data_mode": "reference-fallback", "alternatives": [],
     }
 
 
@@ -841,7 +969,11 @@ def handle_500(err):
 
 @app.get("/api/health")
 def health():
-    return jsonify({"ok": True, "service": "BuildYourPC API", "time": datetime.now(timezone.utc).isoformat()})
+    # Keep this endpoint intentionally dependency-free: it is used to wake a sleeping
+    # Render instance before a user submits the heavier recommendation request.
+    response = jsonify({"ok": True, "service": "BuildYourPC API", "time": datetime.now(timezone.utc).isoformat()})
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    return response
 
 
 @app.get("/api/config")
@@ -925,10 +1057,16 @@ def recommend():
         return jsonify({"error": {"code": "BUILD_UNAVAILABLE", "message": str(exc)}}), 422
     except (KeyError, TypeError, IndexError, sqlite3.DatabaseError) as exc:
         logger.exception("recommend data/database error for country=%s currency=%s", payload.get("country"), payload.get("currency"))
-        return jsonify({"error": {"code": "BUILD_DATA_ERROR", "message": "The build catalog could not produce a valid recommendation. Please retry."}}), 500
+        try:
+            base = _reference_fallback_recommendation(payload)
+        except Exception:
+            return jsonify({"error": {"code": "BUILD_DATA_ERROR", "message": "The build catalog could not produce a valid recommendation. Please retry."}}), 500
     except Exception:
         logger.exception("unexpected recommendation failure for country=%s currency=%s device=%s", payload.get("country"), payload.get("currency"), payload.get("device_type"))
-        return jsonify({"error": {"code": "RECOMMENDATION_ERROR", "message": "The recommendation service failed safely. Please retry."}}), 500
+        try:
+            base = _reference_fallback_recommendation(payload)
+        except Exception:
+            return jsonify({"error": {"code": "RECOMMENDATION_ERROR", "message": "The recommendation service failed safely. Please retry."}}), 500
     # Alternative views use the same constraint set but reweight the engine rather than maxing raw FPS blindly.
     # Never allow an optional alternative to turn a successful primary recommendation into a 500.
     if base["type"] == "desktop":
@@ -940,7 +1078,8 @@ def recommend():
             except Exception:
                 logger.exception("optional desktop alternative failed: mode=%s", mode)
         if not alternatives:
-            alternatives = [base]
+            snapshot = {k: v for k, v in base.items() if k != "alternatives"}
+            alternatives = [snapshot]
     else:
         # Keep the primary recommendation and an independent snapshot as the
         # first alternative. Do NOT put `base` itself inside its `alternatives`
