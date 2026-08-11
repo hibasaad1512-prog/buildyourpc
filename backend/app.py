@@ -14,13 +14,14 @@ from urllib.parse import quote_plus
 import requests
 
 from .live_prices import BestBuyClient, EbayClient, LIVE_MAX_AGE_HOURS, fetch_jsonld_offer, best_matching_offers
+from .currency_config import CURRENCY_CONFIG, exported_config, get_currency
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
-DB_PATH = DATA_DIR / "buildyourpc.sqlite3"
+DB_PATH = Path(os.getenv("BUILDYOURPC_DB_PATH", str(DATA_DIR / "buildyourpc.sqlite3"))).expanduser()
 CATALOG_PATH = DATA_DIR / "catalog.json"
 
 app = Flask(__name__, static_folder=str(ROOT / "frontend"), static_url_path="")
@@ -38,15 +39,7 @@ FX_API_ENABLED = os.getenv("FX_API_ENABLED", "1") != "0"
 FX_CACHE_HOURS = float(os.getenv("FX_CACHE_HOURS", "24"))
 
 
-FX_TO_USD = {
-    "USD": 1.0, "EUR": 0.92, "GBP": 0.79, "CAD": 1.37, "AUD": 1.53,
-    "MAD": 9.6, "AED": 3.67, "SAR": 3.75, "INR": 83.5, "JPY": 150.0,
-    "BRL": 5.2, "TRY": 33.0, "CHF": 0.90, "SEK": 10.5, "NOK": 10.7,
-    "DKK": 6.9, "PLN": 4.0, "CZK": 23.0, "HUF": 360.0, "RON": 4.6,
-    "ZAR": 18.0, "MXN": 17.5, "NZD": 1.65, "SGD": 1.35, "HKD": 7.8,
-    "CNY": 7.2, "KRW": 1350.0, "THB": 36.0, "IDR": 16000.0, "MYR": 4.7,
-    "AED": 3.67, "ILS": 3.6, "TWD": 32.5,
-}
+FX_TO_USD = {code: float(cfg["rateToUSD"]) for code, cfg in CURRENCY_CONFIG.items()}
 
 
 def db() -> sqlite3.Connection:
@@ -142,13 +135,26 @@ def _cached_fx_from_eur() -> dict[str, float]:
     return rates
 
 
+def _safe_requests_json(response: requests.Response) -> Any:
+    content_type = (response.headers.get("content-type") or "").lower()
+    body = response.text.strip()
+    if not body:
+        return {}
+    if "json" not in content_type and not body.startswith(("{", "[")):
+        raise ValueError("FX provider returned a non-JSON response")
+    try:
+        return response.json()
+    except ValueError as exc:
+        raise ValueError("FX provider returned malformed JSON") from exc
+
+
 def refresh_fx_rates() -> dict[str, float]:
     if not FX_API_ENABLED:
         return {}
     try:
         r = requests.get("https://api.frankfurter.dev/v2/rates", params={"base": "EUR"}, timeout=6)
         r.raise_for_status()
-        data = r.json()
+        data = _safe_requests_json(r)
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         con = db()
         for row in data:
@@ -168,31 +174,35 @@ def _eur_to_usd() -> float:
     return float(rates.get("USD", FX_TO_USD.get("EUR", 0.92) and (1.0 / FX_TO_USD["EUR"])))
 
 
+def _validated_currency(currency: str) -> str:
+    code = str(currency or "USD").upper()
+    get_currency(code)
+    return code
+
+
 def usd_from_local(value: float, currency: str) -> float:
-    currency = currency.upper()
-    if currency == "USD":
+    code = _validated_currency(currency)
+    if code == "USD":
         return float(value)
-    # Use fresh EUR-based rates when available, else a bundled fallback table.
     rates = _cached_fx_from_eur()
-    if currency in rates and "USD" in rates:
-        eur_amount = float(value) / rates[currency]
-        return eur_amount * rates["USD"]
-    return float(value) / FX_TO_USD.get(currency, 1.0)
+    if code in rates and "USD" in rates:
+        return (float(value) / rates[code]) * rates["USD"]
+    return float(value) / float(CURRENCY_CONFIG[code]["rateToUSD"])
 
 
 def local_from_usd(value: float, currency: str) -> float:
-    currency = currency.upper()
-    if currency == "USD":
+    code = _validated_currency(currency)
+    if code == "USD":
         return float(value)
     rates = _cached_fx_from_eur()
-    if currency in rates and "USD" in rates:
-        eur_amount = float(value) / rates["USD"]
-        return eur_amount * rates[currency]
-    return float(value) * FX_TO_USD.get(currency, 1.0)
+    if code in rates and "USD" in rates:
+        return (float(value) / rates["USD"]) * rates[code]
+    return float(value) * float(CURRENCY_CONFIG[code]["rateToUSD"])
 
 
 def fmt_money(value: float, currency: str) -> float:
-    return round(local_from_usd(value, currency), 2)
+    cfg = get_currency(currency)
+    return round(local_from_usd(value, currency), int(cfg["decimalDigits"]))
 
 
 def catalog_products(device: str | None = None, category: str | None = None) -> list[dict[str, Any]]:
@@ -716,6 +726,26 @@ def sync_live_prices(country: str, product_ids: list[str] | None = None, provide
     return {"ok": True, "country": country, "providers": providers, "products": len(results), "results": results, "captured_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
 
 
+@app.errorhandler(400)
+def handle_400(err):
+    return jsonify({"error": {"code": "BAD_REQUEST", "message": "The request could not be processed."}}), 400
+
+
+@app.errorhandler(404)
+def handle_404(err):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": {"code": "NOT_FOUND", "message": "The requested API resource was not found."}}), 404
+    return err
+
+
+@app.errorhandler(500)
+def handle_500(err):
+    app.logger.exception("Unhandled server error: %s", err)
+    if request.path.startswith("/api/"):
+        return jsonify({"error": {"code": "INTERNAL_SERVER_ERROR", "message": "The server could not complete this request."}}), 500
+    return err
+
+
 @app.get("/api/health")
 def health():
     return jsonify({"ok": True, "service": "BuildYourPC API", "time": datetime.now(timezone.utc).isoformat()})
@@ -725,7 +755,7 @@ def health():
 def config():
     return jsonify({
         "brand": "BuildYourPC", "tagline": "Your money. Your needs. Your PC.", "kofi": KO_FI_URL,
-        "currencies": CATALOG.get("currencies", {}), "countries": CATALOG.get("countries", []),
+        "currencies": exported_config(), "countries": CATALOG.get("countries", []),
         "languages": CATALOG.get("languages", []), "games": CATALOG.get("games", []),
         "live_price_data": LIVE_PRICE_SYNC_ENABLED and bool(os.getenv("EBAY_CLIENT_ID") or os.getenv("BESTBUY_API_KEY")),
         "live_price_providers": [x for x, ok in [("eBay", bool(os.getenv("EBAY_CLIENT_ID") and os.getenv("EBAY_CLIENT_SECRET"))), ("Best Buy", bool(os.getenv("BESTBUY_API_KEY")))] if ok],
@@ -770,13 +800,16 @@ def recommend():
     try:
         budget = float(payload.get("budget", 0))
     except (TypeError, ValueError):
-        return jsonify({"error": "Invalid budget"}), 400
-    if budget <= 0:
-        return jsonify({"error": "Budget must be greater than zero."}), 400
-    if budget > 1_000_000:
-        return jsonify({"error": "Budget is too large for a sane recommendation. Check the currency or number."}), 400
-
+        return jsonify({"error": {"code": "INVALID_BUDGET", "message": "Enter a valid budget."}}), 400
+    if not (budget == budget and abs(budget) != float("inf")):
+        return jsonify({"error": {"code": "INVALID_BUDGET", "message": "Enter a valid budget."}}), 400
     payload["currency"] = str(payload.get("currency", "USD")).upper()
+    try:
+        currency_cfg = get_currency(payload["currency"])
+    except ValueError as exc:
+        return jsonify({"error": {"code": "UNSUPPORTED_CURRENCY", "message": str(exc)}}), 400
+    if budget < currency_cfg["minimum"] or budget > currency_cfg["maximum"]:
+        return jsonify({"error": {"code": "BUDGET_OUT_OF_RANGE", "message": f"Budget must be between {currency_cfg['minimum']} and {currency_cfg['maximum']} {payload['currency']}."}}), 400
     payload["country"] = str(payload.get("country", "US")).upper()
     base = recommend_build(payload)
     # Alternative views use the same constraint set but reweight the engine rather than maxing raw FPS blindly.
@@ -795,7 +828,16 @@ def recommend():
 def save_build():
     payload = request.get_json(silent=True) or {}
     if not payload:
-        return jsonify({"error": "Missing build payload"}), 400
+        return jsonify({"error": {"code": "EMPTY_PAYLOAD", "message": "Missing build payload."}}), 400
+    query = payload.get("query") or {}
+    if query.get("currency"):
+        try:
+            cfg = get_currency(query["currency"])
+            budget = float(query.get("budget", 0))
+            if budget < cfg["minimum"] or budget > cfg["maximum"]:
+                return jsonify({"error": {"code": "BUDGET_OUT_OF_RANGE", "message": "Build budget is outside the allowed range."}}), 400
+        except (ValueError, TypeError):
+            return jsonify({"error": {"code": "INVALID_BUILD", "message": "Build currency or budget is invalid."}}), 400
     build_id = secrets.token_urlsafe(8).replace("-", "").replace("_", "")[:12]
     con = db()
     con.execute("INSERT INTO builds (id, payload) VALUES (?, ?)", (build_id, json.dumps(payload)))
@@ -935,10 +977,11 @@ def admin_page():
     <hr style='border-color:#292536;margin:28px 0'><h2>Manual feeds</h2><p class='muted'>CSV endpoint: <code>POST /api/admin/import-prices</code> with X-Admin-Token. Required: product_id, store, country, currency, price, product_url.</p>
     </div><script>
     const tokenEl=document.getElementById('token');tokenEl.value=sessionStorage.getItem('byp_admin_token')||'';
+    const readJson=async r=>{const raw=await r.text();let x={};try{x=raw?JSON.parse(raw):{}}catch{x={error:{message:'Invalid server response'}}}if(!r.ok)throw new Error(x.error?.message||x.error||`${r.status} ${r.statusText}`);return x};
     document.getElementById('saveToken').onclick=()=>{sessionStorage.setItem('byp_admin_token',tokenEl.value);loadStats();};
-    async function loadStats(){const r=await fetch('/api/admin/stats',{headers:{'X-Admin-Token':tokenEl.value}});const x=await r.json();document.getElementById('stats').innerHTML=r.ok?Object.entries(x).map(([k,v])=>`<div class='stat'><div class='muted'>${k}</div><strong>${v}</strong></div>`).join(''):`<div class='muted'>${x.error||'Unauthorized'}</div>`}
-    document.getElementById('sync').onclick=async()=>{const providers=[];if(document.getElementById('ebay').checked)providers.push('ebay');if(document.getElementById('bestbuy').checked)providers.push('bestbuy');document.getElementById('out').textContent='Syncing…';const r=await fetch('/api/admin/sync-live',{method:'POST',headers:{'Content-Type':'application/json','X-Admin-Token':tokenEl.value},body:JSON.stringify({country:document.getElementById('country').value.toUpperCase(),providers})});document.getElementById('out').textContent=JSON.stringify(await r.json(),null,2);loadStats();};
-    document.getElementById('fx').onclick=async()=>{document.getElementById('out').textContent='Refreshing FX…';const r=await fetch('/api/fx/refresh',{headers:{'X-Admin-Token':tokenEl.value}});document.getElementById('out').textContent=JSON.stringify(await r.json(),null,2);};
+    async function loadStats(){try{const r=await fetch('/api/admin/stats',{headers:{Accept:'application/json','X-Admin-Token':tokenEl.value}});const x=await readJson(r);document.getElementById('stats').innerHTML=Object.entries(x).map(([k,v])=>`<div class='stat'><div class='muted'>${k}</div><strong>${v}</strong></div>`).join('')}catch(e){document.getElementById('stats').innerHTML=`<div class='muted'>${e.message}</div>`}}
+    document.getElementById('sync').onclick=async()=>{const providers=[];if(document.getElementById('ebay').checked)providers.push('ebay');if(document.getElementById('bestbuy').checked)providers.push('bestbuy');document.getElementById('out').textContent='Syncing…';try{const r=await fetch('/api/admin/sync-live',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-Admin-Token':tokenEl.value},body:JSON.stringify({country:document.getElementById('country').value.toUpperCase(),providers})});document.getElementById('out').textContent=JSON.stringify(await readJson(r),null,2);loadStats()}catch(e){document.getElementById('out').textContent=e.message}};
+    document.getElementById('fx').onclick=async()=>{document.getElementById('out').textContent='Refreshing FX…';try{const r=await fetch('/api/fx/refresh',{headers:{Accept:'application/json','X-Admin-Token':tokenEl.value}});document.getElementById('out').textContent=JSON.stringify(await readJson(r),null,2)}catch(e){document.getElementById('out').textContent=e.message}};
     loadStats();
     </script></body></html>
     """

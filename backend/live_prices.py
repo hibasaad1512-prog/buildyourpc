@@ -74,6 +74,22 @@ def _money(value: Any) -> float | None:
         return None
 
 
+def safe_json_response(response: requests.Response) -> dict[str, Any]:
+    content_type = (response.headers.get("content-type") or "").lower()
+    body = response.text.strip()
+    if not body:
+        return {}
+    if "json" not in content_type and not body.startswith(("{", "[")):
+        raise ValueError(f"Upstream returned {content_type or 'unknown content'} instead of JSON")
+    try:
+        data = response.json()
+    except ValueError as exc:
+        raise ValueError("Upstream returned malformed JSON") from exc
+    if not isinstance(data, dict):
+        raise ValueError("Upstream JSON response has an unexpected shape")
+    return data
+
+
 def _availability(value: Any) -> str:
     text = str(value or "").lower()
     if "instock" in text or "in stock" in text or "available" in text:
@@ -163,7 +179,7 @@ class EbayClient:
             timeout=REQUEST_TIMEOUT,
         )
         response.raise_for_status()
-        data = response.json()
+        data = safe_json_response(response)
         self._token = data["access_token"]
         self._token_expiry = time.time() + float(data.get("expires_in", 7200))
         return self._token
@@ -183,7 +199,7 @@ class EbayClient:
             timeout=REQUEST_TIMEOUT,
         )
         response.raise_for_status()
-        data = response.json()
+        data = safe_json_response(response)
         out: list[Offer] = []
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         for item in data.get("itemSummaries", []):
@@ -230,7 +246,7 @@ class BestBuyClient:
             timeout=REQUEST_TIMEOUT,
         )
         response.raise_for_status()
-        data = response.json()
+        data = safe_json_response(response)
         out: list[Offer] = []
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         for item in data.get("products", []):
