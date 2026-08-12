@@ -79,3 +79,12 @@ Render start command:
 ```bash
 gunicorn backend.app:app
 ```
+
+
+## V14 shopping / live-pricing update
+- The “Search all stores” control now opens one comparison panel instead of firing multiple pop-ups.
+- Live prices are promoted only from enabled retailer/API feeds and are labeled as **verified live** with a timestamp.
+- The site intentionally does **not** claim to know the absolute cheapest listing on the whole web. It shows the best verified offer among the live sources it can access, plus market-specific search links.
+- For broader live pricing, configure the free eBay Developers Program credentials in Render (`EBAY_CLIENT_ID`, `EBAY_CLIENT_SECRET`). eBay’s Browse API supports keyword search and requires an application access token.
+- The project includes Morocco-specific search sources such as PC Parts Maroc, PC Builder Maroc, GeekGame, Composants.ma and Qwerty Gaming as search-only links; they are not represented as live prices unless a permitted feed is connected.
+- The result page now includes a compact PC snapshot and a small support/tip strip.

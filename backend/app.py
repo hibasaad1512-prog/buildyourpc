@@ -44,6 +44,13 @@ FX_API_ENABLED = os.getenv("FX_API_ENABLED", "1") != "0"
 # the centralized fallback table. This is especially important for Render free.
 FX_AUTO_REFRESH = os.getenv("FX_AUTO_REFRESH", "0") == "1"
 FX_CACHE_HOURS = float(os.getenv("FX_CACHE_HOURS", "24"))
+LIVE_AUTO_SYNC = os.getenv("LIVE_AUTO_SYNC", "1") != "0"
+LIVE_AUTO_SYNC_LIMIT = max(1, int(os.getenv("LIVE_AUTO_SYNC_LIMIT", "5")))
+EBAY_COUNTRY_MARKETS = {
+    "US": "EBAY_US", "CA": "EBAY_CA", "GB": "EBAY_GB", "DE": "EBAY_DE", "FR": "EBAY_FR",
+    "IT": "EBAY_IT", "ES": "EBAY_ES", "AU": "EBAY_AU", "IE": "EBAY_IE", "AT": "EBAY_AT",
+    "BE": "EBAY_BE", "NL": "EBAY_NL", "CH": "EBAY_CH", "PL": "EBAY_PL",
+}
 FX_BOOTSTRAP_DONE = False
 
 
@@ -983,6 +990,19 @@ def enrich_result_features(result: dict[str, Any], payload: dict[str, Any]) -> d
             reasons.append("Live retailer feeds are not active for this market yet, so search links are shown instead of pretending a reference price is a live deal.")
         result["build_reasons"] = reasons
 
+    if "build_checklist" not in result:
+        if result.get("type") == "desktop":
+            result["build_checklist"] = [
+                {"label": "Core components", "items": ["CPU", "GPU", "Motherboard", "RAM", "SSD", "PSU", "Case"], "kind": "core"},
+                {"label": "Cooling", "items": ["CPU cooler", "Thermal paste", "Case airflow / extra fans"], "kind": "cooling"},
+                {"label": "Finishing", "items": ["Wi-Fi (if needed)", "Operating system", "Monitor", "Keyboard + mouse", "Headset / speakers"], "kind": "optional"},
+            ]
+        elif result.get("type") in {"laptop", "prebuilt", "used"}:
+            result["build_checklist"] = [
+                {"label": "Included essentials", "items": ["Power adapter", "Operating system", "Warranty / condition check"], "kind": "core"},
+                {"label": "Setup extras", "items": ["Monitor (optional)", "Keyboard + mouse", "Headset", "Dock / USB hub (optional)"], "kind": "optional"},
+            ]
+
     if "cheaper_alternatives" not in result:
         alternatives = []
         current_total = float(result.get("total") or 0)
@@ -1037,10 +1057,10 @@ def sync_product_prices(product: dict[str, Any], country: str, providers: list[s
     query = product.get("search_query") or product.get("name")
     found: list[Any] = []
     if "ebay" in providers:
-        marketplace = os.getenv("EBAY_MARKETPLACE_ID", "EBAY_US").strip()
-        # eBay marketplace access varies by application; use the configured marketplace.
+        marketplace = EBAY_COUNTRY_MARKETS.get(country, os.getenv("EBAY_MARKETPLACE_ID", "EBAY_US")).strip()
+        # eBay marketplace access varies by application; prefer the selected country when supported.
         try:
-            found.extend(EbayClient().search(query))
+            found.extend(EbayClient(marketplace=marketplace).search(query))
         except Exception as exc:
             return {"product_id": product["id"], "offers": 0, "error": f"eBay: {exc}"}
     if "bestbuy" in providers and country == "US":
@@ -1113,9 +1133,11 @@ def config():
         "brand": "BuildYourPC", "tagline": "Your money. Your needs. Your PC.", "kofi": KO_FI_URL,
         "currencies": exported_config(), "countries": CATALOG.get("countries", []),
         "languages": CATALOG.get("languages", []), "games": CATALOG.get("games", []),
-        "live_price_data": LIVE_PRICE_SYNC_ENABLED and bool(os.getenv("EBAY_CLIENT_ID") or os.getenv("BESTBUY_API_KEY")),
+        "live_price_data": LIVE_PRICE_SYNC_ENABLED and bool(os.getenv("EBAY_CLIENT_ID") and os.getenv("EBAY_CLIENT_SECRET")),
+        "live_auto_sync": LIVE_AUTO_SYNC,
         "live_price_providers": [x for x, ok in [("eBay", bool(os.getenv("EBAY_CLIENT_ID") and os.getenv("EBAY_CLIENT_SECRET"))), ("Best Buy", bool(os.getenv("BESTBUY_API_KEY")))] if ok],
         "live_price_max_age_hours": LIVE_MAX_AGE_HOURS,
+        "live_price_policy": "Best verified live offer among enabled sources; never claimed as the absolute cheapest listing on the entire web.",
         "fx_live": bool(_cached_fx_from_eur()),
         "notes": [
             "Fresh retailer/API offers override reference prices when available.",
@@ -1153,6 +1175,84 @@ def explore():
     ]
     return jsonify({"stats": {"builds": total_builds, "views": total_views, "shares": total_shares}, "live": live, "curated": curated})
 
+
+
+def _refresh_live_offers_for_result(result: dict[str, Any], payload: dict[str, Any]) -> dict[str, Any]:
+    """Refresh a few high-value parts from enabled live providers, then rebuild offer lists.
+
+    Live prices are only promoted when a permitted provider/feed returns fresh data.
+    Without credentials, the normal search-only marketplace links remain available.
+    """
+    if not LIVE_AUTO_SYNC:
+        return result
+    country = str(payload.get("country") or "US").upper()
+    providers: list[str] = []
+    if os.getenv("EBAY_CLIENT_ID") and os.getenv("EBAY_CLIENT_SECRET"):
+        providers.append("ebay")
+    if os.getenv("BESTBUY_API_KEY") and country == "US":
+        providers.append("bestbuy")
+    if not providers:
+        return result
+    products = CATALOG.get("products", [])
+    product_map = {str(p.get("id")): p for p in products}
+    part_ids = [str(p.get("id")) for p in (result.get("parts") or []) if p.get("id") in product_map]
+    # Prefer the most purchase-sensitive categories and keep the auto-refresh cheap.
+    priority = {"gpu": 0, "cpu": 1, "ram": 2, "ssd": 3, "motherboard": 4, "psu": 5, "case": 6}
+    part_ids = sorted(part_ids, key=lambda pid: priority.get(str(product_map[pid].get("category")), 50))[:LIVE_AUTO_SYNC_LIMIT]
+    for pid in part_ids:
+        product = product_map[pid]
+        try:
+            fresh = [o for o in current_offers(product, country, str(payload.get("currency") or "USD")) if o.get("live")]
+            fresh_ok = any(o.get("captured_at") for o in fresh)
+            # A fresh cached offer is enough; otherwise ask the provider for a new snapshot.
+            if not fresh_ok:
+                sync_product_prices(product, country, providers)
+        except Exception as exc:
+            logger.info("live price refresh skipped for %s: %s", pid, exc)
+    # Rebuild visible offers and price snapshot from current data.
+    currency = str(payload.get("currency") or "USD").upper()
+    for part in result.get("parts") or []:
+        product = product_map.get(str(part.get("id")))
+        if not product:
+            continue
+        try:
+            offers = current_offers(product, country, currency)
+            part["offers"] = offers
+            live = [o for o in offers if o.get("live") and o.get("price") is not None]
+            if live:
+                best = min(live, key=lambda o: usd_from_local(float(o["price"]), o["currency"]))
+                part["price"] = round(float(best["price"]), 2)
+                part["currency"] = best["currency"]
+                part["price_is_live"] = True
+                part["best_live_store"] = best.get("store")
+                part["price_checked_at"] = best.get("captured_at")
+            else:
+                part["price_is_live"] = False
+        except Exception:
+            continue
+    numeric_prices = [float(p.get("price")) for p in result.get("parts") or [] if p.get("price") is not None]
+    if numeric_prices:
+        result["total"] = round(sum(numeric_prices), 2)
+    live_budget = float(payload.get("budget") or 0)
+    if live_budget:
+        live_total = float(result.get("total") or 0)
+        result["budget_delta"] = round(live_total - live_budget, 2)
+        result["budget_match"] = "within-budget" if live_total <= live_budget else "closest-available"
+    all_offers = [o for p in result.get("parts") or [] for o in (p.get("offers") or [])]
+    live_offers = [o for o in all_offers if o.get("live")]
+    result["price_hunt"] = {
+        "offers_count": len(all_offers),
+        "live_count": len(live_offers),
+        "stores_count": len({o.get("store") for o in all_offers if o.get("store")} ),
+        "total": result.get("total"),
+        "mode": "live" if live_offers else "search",
+        "last_checked": max((o.get("captured_at") for o in live_offers if o.get("captured_at")), default=None),
+    }
+    if live_offers:
+        result["market_price_note"] = "Best verified live offer among enabled sources for this market; not a guarantee of the absolute cheapest listing everywhere."
+    else:
+        result["market_price_note"] = "No fresh live retailer data is enabled for this market. Search links are shown instead of pretending reference prices are live."
+    return result
 
 @app.post("/api/recommend")
 def recommend():
@@ -1221,6 +1321,9 @@ def recommend():
     base = enrich_result_features(base, payload)
     for i, alt in enumerate(alternatives):
         alternatives[i] = enrich_result_features(alt, payload)
+    base = _refresh_live_offers_for_result(base, payload)
+    # Keep alternative builds transparent: they reuse the same data policy but are not
+    # independently refreshed to avoid multiplying provider calls.
     base["alternatives"] = alternatives
     base["query"] = {
         "budget": budget, "currency": payload["currency"], "device_type": payload.get("device_type", "not_sure"),

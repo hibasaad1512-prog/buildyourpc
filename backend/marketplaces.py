@@ -9,6 +9,11 @@ def _url(template: str, query: str) -> str:
 # Search links only: these are user-facing marketplace choices, not scraped prices.
 # Live prices still come from permitted feeds/APIs and are kept separate.
 MARKETPLACES = [
+    {"name": "PC Parts Maroc", "countries": {"MA"}, "url": "https://pcpartsmaroc.com/en/search?q={q}"},
+    {"name": "PC Builder Maroc", "countries": {"MA"}, "url": "https://www.google.com/search?q=site%3Apcbuilder.ma+{q}"},
+    {"name": "GeekGame Maroc", "countries": {"MA"}, "url": "https://www.google.com/search?q=site%3Ageekgame.ma+{q}"},
+    {"name": "Composants.ma", "countries": {"MA"}, "url": "https://www.google.com/search?q=site%3Acomposants.ma+{q}"},
+    {"name": "Qwerty Gaming", "countries": {"MA"}, "url": "https://www.google.com/search?q=site%3Aqwerty.ma+{q}"},
     {"name": "Avito", "countries": {"MA"}, "url": "https://www.avito.ma/fr/maroc/{q}"},
     {"name": "Ouedkniss", "countries": {"DZ"}, "url": "https://www.ouedkniss.com/annonces?keywords={q}"},
     {"name": "Tayara", "countries": {"TN"}, "url": "https://www.tayara.tn/listings?keywords={q}"},

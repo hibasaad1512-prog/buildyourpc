@@ -152,10 +152,10 @@ def fetch_jsonld_offer(url: str, store_name: str) -> list[Offer]:
 
 
 class EbayClient:
-    def __init__(self) -> None:
+    def __init__(self, marketplace: str | None = None) -> None:
         self.client_id = os.getenv("EBAY_CLIENT_ID", "").strip()
         self.client_secret = os.getenv("EBAY_CLIENT_SECRET", "").strip()
-        self.marketplace = os.getenv("EBAY_MARKETPLACE_ID", "EBAY_US").strip() or "EBAY_US"
+        self.marketplace = (marketplace or os.getenv("EBAY_MARKETPLACE_ID", "EBAY_US")).strip() or "EBAY_US"
         self._token: str | None = None
         self._token_expiry = 0.0
 

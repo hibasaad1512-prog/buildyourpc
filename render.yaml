@@ -12,3 +12,17 @@ services:
         value: "3.12.4"
       - key: KO_FI_URL
         value: "https://ko-fi.com/simbawwyy00"
+      - key: LIVE_AUTO_SYNC
+        value: "1"
+      - key: LIVE_PRICE_MAX_AGE_HOURS
+        value: "6"
+      - key: LIVE_AUTO_SYNC_LIMIT
+        value: "5"
+      # Add these in the Render dashboard after creating a free eBay Developers account.
+      # Never commit real secrets to git.
+      - key: EBAY_CLIENT_ID
+        sync: false
+      - key: EBAY_CLIENT_SECRET
+        sync: false
+      - key: EBAY_MARKETPLACE_ID
+        value: "EBAY_US"
