@@ -2411,6 +2411,171 @@
           ]
         }
       ]
+    },
+    {
+      "id": "cooler-ak400",
+      "device": "desktop",
+      "category": "cooler",
+      "name": "DeepCool AK400 CPU Cooler",
+      "brand": "DeepCool",
+      "usd_price": 35,
+      "performance": 70,
+      "value": 90,
+      "quiet": 88,
+      "upgrade_score": 78,
+      "tdp_rating": 220,
+      "height_mm": 155,
+      "sockets": [
+        "AM4",
+        "AM5",
+        "LGA1700"
+      ],
+      "why": "A sensible tower cooler for mainstream gaming CPUs.",
+      "stores": [
+        {
+          "name": "Search retailers",
+          "base_url": "https://www.google.com/search?q=DeepCool+AK400",
+          "usd_price": 35
+        }
+      ]
+    },
+    {
+      "id": "cooler-assassin-x",
+      "device": "desktop",
+      "category": "cooler",
+      "name": "Thermalright Assassin X 120",
+      "brand": "Thermalright",
+      "usd_price": 25,
+      "performance": 66,
+      "value": 94,
+      "quiet": 84,
+      "upgrade_score": 75,
+      "tdp_rating": 180,
+      "height_mm": 148,
+      "sockets": [
+        "AM4",
+        "AM5",
+        "LGA1700",
+        "LGA1200"
+      ],
+      "why": "Low-cost tower cooling with strong value.",
+      "stores": [
+        {
+          "name": "Search retailers",
+          "base_url": "https://www.google.com/search?q=Thermalright+Assassin+X+120",
+          "usd_price": 25
+        }
+      ]
+    },
+    {
+      "id": "cooler-wraith-prism",
+      "device": "desktop",
+      "category": "cooler",
+      "name": "AMD Wraith Prism Cooler",
+      "brand": "AMD",
+      "usd_price": 45,
+      "performance": 60,
+      "value": 72,
+      "quiet": 68,
+      "upgrade_score": 62,
+      "tdp_rating": 105,
+      "height_mm": 96,
+      "sockets": [
+        "AM4",
+        "AM5"
+      ],
+      "why": "Compact AMD-compatible cooler for moderate loads.",
+      "stores": [
+        {
+          "name": "Search retailers",
+          "base_url": "https://www.google.com/search?q=AMD+Wraith+Prism",
+          "usd_price": 45
+        }
+      ]
+    },
+    {
+      "id": "fans-120-3pack",
+      "device": "desktop",
+      "category": "case_fans",
+      "name": "120mm PWM Case Fan 3-Pack",
+      "brand": "BuildYourPC",
+      "usd_price": 24,
+      "performance": 55,
+      "value": 88,
+      "quiet": 82,
+      "upgrade_score": 70,
+      "fan_count": 3,
+      "why": "A simple airflow upgrade for sustained gaming loads.",
+      "stores": [
+        {
+          "name": "Search retailers",
+          "base_url": "https://www.google.com/search?q=120mm+PWM+case+fan+3+pack",
+          "usd_price": 24
+        }
+      ]
+    },
+    {
+      "id": "paste-arctic-mx6",
+      "device": "desktop",
+      "category": "thermal_paste",
+      "name": "Arctic MX-6 Thermal Paste",
+      "brand": "ARCTIC",
+      "usd_price": 9,
+      "performance": 30,
+      "value": 84,
+      "quiet": 80,
+      "upgrade_score": 45,
+      "grams": 4,
+      "why": "Reliable thermal paste for a clean cooler installation.",
+      "stores": [
+        {
+          "name": "Search retailers",
+          "base_url": "https://www.google.com/search?q=Arctic+MX-6",
+          "usd_price": 9
+        }
+      ]
+    },
+    {
+      "id": "ssd-2tb",
+      "device": "desktop",
+      "category": "ssd",
+      "name": "2TB NVMe Gen4 SSD",
+      "brand": "BuildYourPC",
+      "usd_price": 99,
+      "performance": 82,
+      "value": 91,
+      "upgrade_score": 84,
+      "capacity_gb": 2048,
+      "interface": "PCIe 4.0 NVMe",
+      "why": "A spacious game library drive with strong everyday performance.",
+      "stores": [
+        {
+          "name": "Search retailers",
+          "base_url": "https://www.google.com/search?q=2TB+NVMe+Gen4+SSD",
+          "usd_price": 99
+        }
+      ]
+    },
+    {
+      "id": "ram-32-ddr4",
+      "device": "desktop",
+      "category": "ram",
+      "name": "32GB DDR4-3600 Kit",
+      "brand": "BuildYourPC",
+      "usd_price": 64,
+      "performance": 73,
+      "value": 90,
+      "upgrade_score": 65,
+      "memory_type": "DDR4",
+      "capacity_gb": 32,
+      "why": "Balanced DDR4 capacity for value-focused builds.",
+      "stores": [
+        {
+          "name": "Search retailers",
+          "base_url": "https://www.google.com/search?q=32GB+DDR4+3600+kit",
+          "usd_price": 64
+        }
+      ]
     }
   ]
 }

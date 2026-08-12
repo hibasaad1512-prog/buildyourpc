@@ -277,6 +277,15 @@ def enrich_catalog() -> None:
             p["wattage"] = 650 if pid == "psu-650" else 500
         elif p.get("category") == "case":
             p["supports"] = ["ATX", "mATX"]
+            p.setdefault("max_cooler_height_mm", 160 if pid == "case-air" else 155)
+        elif p.get("category") == "cooler":
+            p.setdefault("sockets", ["AM4", "AM5", "LGA1700"])
+            p.setdefault("tdp_rating", 180)
+            p.setdefault("height_mm", 150)
+        elif p.get("category") == "thermal_paste":
+            p.setdefault("grams", 4)
+        elif p.get("category") == "case_fans":
+            p.setdefault("fan_count", 3)
         elif p.get("category") in {"prebuilt", "laptop", "used"}:
             p.setdefault("condition", "new" if p.get("device") != "used" else "used")
             p.setdefault("warranty_months", 12 if p.get("device") != "used" else 3)
@@ -498,6 +507,7 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
     psus = with_market_prices(catalog_products("desktop", "psu"), need.get("country", "US"), need.get("currency", "USD"))
     cases = with_market_prices(catalog_products("desktop", "case"), need.get("country", "US"), need.get("currency", "USD"))
     ssds = with_market_prices(catalog_products("desktop", "ssd"), need.get("country", "US"), need.get("currency", "USD"))
+    coolers = with_market_prices(catalog_products("desktop", "cooler"), need.get("country", "US"), need.get("currency", "USD"))
 
     if existing and "cpu" in existing:
         cpus = []
@@ -513,6 +523,8 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
         cases = []
     if existing and "ssd" in existing:
         ssds = []
+    if existing and "cooler" in existing:
+        coolers = []
 
     # Find the platform first so socket + memory type cannot drift apart.
     base_pool = cpus or with_market_prices(catalog_products("desktop", "cpu"), need.get("country", "US"), need.get("currency", "USD"))
@@ -551,6 +563,14 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
     if chosen_ssd:
         parts["ssd"] = chosen_ssd
 
+    cpu_for_cooler = parts.get("cpu") or {}
+    socket_for_cooler = cpu_for_cooler.get("socket")
+    compatible_coolers = [c for c in coolers if socket_for_cooler in c.get("sockets", [])]
+    if compatible_coolers:
+        # Prefer good value while staying modest; the cooler should not steal budget from the GPU.
+        chosen_cooler = max(compatible_coolers, key=lambda p: score_product(p, need, usd_budget * 0.12))
+        parts["cooler"] = chosen_cooler
+
     def current_total() -> float:
         return sum(float(v["usd_price"]) for v in parts.values())
 
@@ -565,10 +585,10 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
         parts["case"] = min(compatible_cases or cases, key=lambda p: p["usd_price"])
 
     # Ensure budget fit by swapping GPU first, then other flex categories.
-    order = ["gpu", "cpu", "ssd", "ram", "motherboard", "psu", "case"]
+    order = ["gpu", "cpu", "ssd", "ram", "motherboard", "cooler", "psu", "case"]
     candidates = {
         "gpu": gpus, "cpu": cpus, "ssd": ssds, "ram": rams,
-        "motherboard": mobos, "psu": psus, "case": cases,
+        "motherboard": mobos, "cooler": coolers, "psu": psus, "case": cases,
     }
     total = current_total()
     while total > usd_budget and any(candidates.get(k) for k in order):
@@ -585,6 +605,8 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
                 if cat == "motherboard" and parts.get("cpu") and alt.get("socket") != parts["cpu"].get("socket"):
                     continue
                 if cat == "ram" and parts.get("motherboard") and alt.get("memory_type") != parts["motherboard"].get("memory_type"):
+                    continue
+                if cat == "cooler" and parts.get("cpu") and parts["cpu"].get("socket") not in alt.get("sockets", []):
                     continue
                 proposed = total - float(current["usd_price"]) + float(alt["usd_price"])
                 if proposed <= total:
@@ -616,6 +638,10 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
                 gpu = parts.get("gpu") or {}
                 need_w = gpu.get("recommended_psu_w", 450)
                 opts = [p for p in pool if p.get("wattage", 0) >= need_w]
+                if opts: cheapest[cat] = min(opts, key=lambda p: p["usd_price"])
+            elif cat == "cooler":
+                cpu = parts.get("cpu") or {}
+                opts = [p for p in pool if not cpu or cpu.get("socket") in p.get("sockets", [])]
                 if opts: cheapest[cat] = min(opts, key=lambda p: p["usd_price"])
             else:
                 cheapest[cat] = min(pool, key=lambda p: p["usd_price"])
@@ -700,7 +726,7 @@ def choose_desktop(need: dict[str, Any], usd_budget: float, mode: str = "smart")
                 "currency": need.get("currency", "USD"), "performance": p.get("performance", 0),
                 "why": p.get("why", "Balanced choice for your goal."),
                 "offers": current_offers(p, need.get("country", "US"), need.get("currency", "USD")),
-                "specs": {k: p.get(k) for k in ["socket", "memory_type", "wattage", "recommended_psu_w", "condition", "warranty_months"] if k in p},
+                "specs": {k: p.get(k) for k in ["socket", "memory_type", "wattage", "recommended_psu_w", "condition", "warranty_months", "sockets", "tdp_rating", "height_mm", "max_cooler_height_mm", "capacity_gb", "interface"] if k in p},
             }
         )
     return {
@@ -1003,6 +1029,92 @@ def enrich_result_features(result: dict[str, Any], payload: dict[str, Any]) -> d
                 {"label": "Setup extras", "items": ["Monitor (optional)", "Keyboard + mouse", "Headset", "Dock / USB hub (optional)"], "kind": "optional"},
             ]
 
+    # --- Final-period product experience: doctor, budget lab, shopping confidence, setup plan.
+    # All values are derived from the local catalog and any verified offers already present.
+    # They are intentionally estimates and never presented as guarantees.
+    if "build_doctor" not in result:
+        doctor: list[dict[str, Any]] = []
+        if result.get("type") == "desktop":
+            cpu = next((p for p in parts if p.get("category") == "cpu"), None)
+            board = next((p for p in parts if p.get("category") == "motherboard"), None)
+            ram = next((p for p in parts if p.get("category") == "ram"), None)
+            gpu = next((p for p in parts if p.get("category") == "gpu"), None)
+            psu = next((p for p in parts if p.get("category") == "psu"), None)
+            case = next((p for p in parts if p.get("category") == "case"), None)
+            if cpu and board and cpu.get("specs", {}).get("socket") and board.get("specs", {}).get("socket"):
+                doctor.append({"severity": "good" if cpu["specs"]["socket"] == board["specs"]["socket"] else "critical", "code": "socketCheck", "meta": {"cpu_socket": cpu["specs"].get("socket"), "board_socket": board["specs"].get("socket")}})
+            if ram and board and ram.get("specs", {}).get("memory_type") and board.get("specs", {}).get("memory_type"):
+                doctor.append({"severity": "good" if ram["specs"]["memory_type"] == board["specs"]["memory_type"] else "critical", "code": "memoryCheck", "meta": {"memory": ram["specs"].get("memory_type"), "board": board["specs"].get("memory_type")}})
+            if gpu and psu:
+                required = float(gpu.get("specs", {}).get("recommended_psu_w") or 0)
+                watts = float(psu.get("specs", {}).get("wattage") or 0)
+                headroom = watts - required if required else None
+                sev = "good" if headroom is not None and headroom >= 50 else ("watch" if headroom is not None and headroom >= 0 else "critical")
+                doctor.append({"severity": sev, "code": "psuCheck", "meta": {"required": required, "wattage": watts, "headroom": headroom}})
+            if case:
+                doctor.append({"severity": "good", "code": "caseCheck", "meta": {}})
+            if not any(p.get("category") == "cooler" for p in parts):
+                doctor.append({"severity": "watch", "code": "coolingCheck", "meta": {}})
+            if not any(p.get("category") == "case_fans" for p in parts):
+                doctor.append({"severity": "watch", "code": "airflowCheck", "meta": {}})
+        else:
+            doctor.append({"severity": "good", "code": "portableCheck", "meta": {}})
+        if live_count:
+            doctor.append({"severity": "good", "code": "livePriceCheck", "meta": {"count": live_count}})
+        else:
+            doctor.append({"severity": "watch", "code": "referencePriceCheck", "meta": {}})
+        result["build_doctor"] = doctor[:8]
+
+    if "shopping_confidence" not in result:
+        live_times = [o.get("captured_at") for o in offers if o.get("live") and o.get("captured_at")]
+        result["shopping_confidence"] = {
+            "level": "high" if live_count >= max(2, len(parts)) else ("medium" if live_count else "low"),
+            "live_count": live_count,
+            "store_count": len(stores),
+            "parts_with_live": sum(1 for part in parts if any(o.get("live") for o in (part.get("offers") or []))),
+            "parts_total": len(parts),
+            "last_checked": max(live_times) if live_times else None,
+        }
+
+    if "budget_lab" not in result:
+        total_local = float(result.get("total") or payload.get("budget") or 0)
+        budget_local = float(payload.get("budget") or total_local)
+        plus = {"direction": "plus", "change": round(budget_local * 0.08, 2), "category": None, "name": None, "gain_pct": 0}
+        minus = {"direction": "minus", "change": round(budget_local * 0.08, 2), "category": None, "name": None, "savings": 0, "loss_pct": 0}
+        # For desktop, find the cheapest higher-performance GPU within a modest step-up.
+        if result.get("type") == "desktop":
+            current_gpu = next((p for p in parts if p.get("category") == "gpu"), None)
+            if current_gpu:
+                pool = [x for x in catalog_products("desktop", "gpu") if float(x.get("performance", 0)) > float(current_gpu.get("performance", 0))]
+                current_price = usd_from_local(float(current_gpu.get("price") or 0), currency)
+                candidates = [x for x in pool if float(x.get("usd_price") or 0) <= current_price + usd_from_local(plus["change"], currency)]
+                if candidates:
+                    best = max(candidates, key=lambda x: (float(x.get("performance", 0)) - float(current_gpu.get("performance", 0)), -float(x.get("usd_price", 0))))
+                    plus.update({"category": "GPU", "name": best.get("name"), "gain_pct": max(0, round((float(best.get("performance", 0)) / max(1, float(current_gpu.get("performance", 0))) - 1) * 100))})
+            cheap = sorted((x for x in (result.get("cheaper_alternatives") or []) if float(x.get("savings", 0)) > 0), key=lambda x: float(x.get("savings", 0)), reverse=True)
+            if cheap:
+                best = cheap[0]
+                minus.update({"category": best.get("category"), "name": best.get("name"), "savings": round(float(best.get("savings", 0)), 2), "loss_pct": max(0, round((1 - float(best.get("performance", 0)) / max(1, float(next((p.get("performance", 0) for p in parts if p.get("category") == best.get("category")), best.get("performance", 0))))) * 100))})
+        result["budget_lab"] = {"plus": plus, "minus": minus, "currency": currency, "note_code": "budgetLabEstimate"}
+
+    if "setup_checklist" not in result:
+        if result.get("type") == "desktop":
+            result["setup_checklist"] = [
+                {"code": "coreReady", "status": "ready"},
+                {"code": "coolingAdd", "status": "recommended"},
+                {"code": "thermalPasteAdd", "status": "recommended"},
+                {"code": "airflowAdd", "status": "recommended"},
+                {"code": "monitorAdd", "status": "optional"},
+                {"code": "osAdd", "status": "optional"},
+            ]
+        else:
+            result["setup_checklist"] = [
+                {"code": "portableReady", "status": "ready"},
+                {"code": "chargerCheck", "status": "recommended"},
+                {"code": "warrantyCheck", "status": "recommended"},
+                {"code": "peripheralAdd", "status": "optional"},
+            ]
+
     if "cheaper_alternatives" not in result:
         alternatives = []
         current_total = float(result.get("total") or 0)
@@ -1093,7 +1205,7 @@ def sync_live_prices(country: str, product_ids: list[str] | None = None, provide
         wanted = set(product_ids); products = [p for p in products if p.get("id") in wanted]
     results = []
     for product in products:
-        if product.get("category") in {"cpu", "gpu", "ram", "motherboard", "ssd", "psu", "case", "laptop", "prebuilt", "used"} or product.get("device") in {"laptop", "prebuilt", "used"}:
+        if product.get("category") in {"cpu", "gpu", "ram", "motherboard", "ssd", "psu", "case", "cooler", "laptop", "prebuilt", "used"} or product.get("device") in {"laptop", "prebuilt", "used"}:
             results.append(sync_product_prices(product, country, providers))
     return {"ok": True, "country": country, "providers": providers, "products": len(results), "results": results, "captured_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
 
