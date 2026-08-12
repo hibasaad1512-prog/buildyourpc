@@ -587,6 +587,9 @@ async function runRecommendation(){
     for(let attempt=0;attempt<2;attempt++){
       try{
         state.result=await apiFetch('/api/recommend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(requestPayload),timeoutMs:75000});
+        // Older backend deployments may return a valid result without echoing the query.
+        // Attach the request locally so the renderer never hides a valid result.
+        if(state.result && typeof state.result === 'object' && !state.result.query){ state.result.query={...requestPayload}; }
         lastError=null; break;
       }catch(e){
         lastError=e;
@@ -657,7 +660,10 @@ function bindShoppingButton(result){qa('#huntAllParts,[data-hunt-all]').forEach(
 
 
 function renderResults(){
-  const r=state.result;if(!r||!r.query)return;el('summaryBudget').textContent=fmtMoney(r.query.budget,r.query.currency);el('summaryMarket').textContent=`${r.query.country} · ${r.query.currency}`;el('summaryDirection').textContent=localizedResultTitle(r);
+  const r=state.result;if(!r)return;
+  // Be tolerant of older/shared builds that do not contain query metadata.
+  if(!r.query) r.query={budget:state.budget,currency:state.currency,country:state.country,device_type:state.device_type,use_cases:[...state.use_cases],games:[...state.games],preferences:[...state.preferences],existing_parts:[...state.existing_parts],target_fps:state.target_fps,resolution:state.resolution,laptop_preferences:[...state.laptop_preferences]};
+  el('summaryBudget').textContent=fmtMoney(r.query.budget,r.query.currency);el('summaryMarket').textContent=`${r.query.country} · ${r.query.currency}`;el('summaryDirection').textContent=localizedResultTitle(r);
   el('briefChips').innerHTML=buildBrief().map(x=>`<span class="brief-chip">${escapeHtml(x)}</span>`).join('');
   renderResultPreset(r);
 }

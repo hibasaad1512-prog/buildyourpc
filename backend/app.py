@@ -1395,6 +1395,9 @@ def recommend():
             return jsonify({"error": {"code": "INVALID_FPS", "message": "Target FPS must be a number."}}), 400
     try:
         base = recommend_build(payload)
+        # Always return the original request context so the frontend can render
+        # the result even when a provider returns a valid build without its own query echo.
+        base["query"] = payload.copy()
     except ValueError as exc:
         logger.warning("recommend validation/build error: %s", exc, extra={"country": payload.get("country"), "currency": payload.get("currency")})
         return jsonify({"error": {"code": "BUILD_UNAVAILABLE", "message": str(exc)}}), 422
@@ -1443,6 +1446,9 @@ def recommend():
         "target_fps": payload.get("target_fps"), "resolution": payload.get("resolution"), "existing_parts": payload.get("existing_parts", []),
         "laptop_preferences": payload.get("laptop_preferences", []),
     }
+    # Final guard: every successful response has query metadata for the renderer.
+    if not isinstance(base.get("query"), dict):
+        base["query"] = payload.copy()
     event("recommendation_created", country=payload["country"], meta={"device": base["type"], "budget": budget, "currency": payload["currency"]})
     return jsonify(base)
 
