@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<script>(function(){try{const l=localStorage.getItem("byp_language");const rtl=["ar","ur","fa","he"];if(l){document.documentElement.lang=l;document.documentElement.dir=rtl.includes(l)?"rtl":"ltr"}}catch(e){}})();</script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="BuildYourPC finds the PC, laptop or prebuilt that fits your budget, needs, games and market.">
+  <meta property="og:title" content="BuildYourPC — Build smarter. Buy with confidence.">
+  <meta property="og:description" content="Build a compatible PC, compare verified market offers, optimize your budget and understand every trade-off.">
+  <meta name="theme-color" content="#08080b">
+  <title>BuildYourPC — Build smarter. Buy with confidence.</title>
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png"><rect width=%22100%22 height=%22100%22 rx=%2228%22 fill=%22%2308080b%22/><path d=%22M25 56c0-16 12-30 28-30h22v16H53c-7 0-12 6-12 14s5 14 12 14h22v16H53c-16 0-28-14-28-30Z%22 fill=%22%239b5cff%22/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=15">
+</head>
+<body>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+
+<header class="topbar">
+  <a class="brand" href="#top" aria-label="BuildYourPC home">
+    <span class="brand-mark">B</span><span>BuildYourPC</span>
+  </a>
+  <nav class="desktop-nav">
+    <a href="#explore">Explore</a>
+    <a href="#how">How it works</a>
+    <a href="#results">Results</a>
+  </nav>
+  <div class="top-actions">
+    <button class="icon-btn" id="countryBtn" aria-haspopup="dialog" aria-label="Change country">🌎 <span id="countryLabel">US</span></button>
+    <button class="icon-btn" id="langBtn" aria-haspopup="dialog" aria-label="Change language">EN</button>
+    <a class="tip-btn" href="https://ko-fi.com/simbawwyy00" target="_blank" rel="noopener">☕ <span>Leave a Tip</span></a>
+    <button class="mobile-menu" id="menuBtn" aria-label="Open menu">☰</button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero shell">
+    <div class="hero-copy reveal">
+      <div class="eyebrow"><span class="live-dot"></span> A smarter way to buy your next computer</div>
+      <h1>Build the PC<br><em>you actually need.</em></h1>
+      <p class="hero-sub">Tell us your budget, your world, and what matters. BuildYourPC finds the smartest machine for your money — not the most expensive one.</p>
+      <div class="hero-ctas">
+        <button class="primary-btn" id="startBtn">Start building <span>→</span></button>
+        <button class="ghost-btn" id="exploreBtn">Explore builds</button>
+      </div>
+      <div class="hero-proof">
+        <div><strong id="statBuilds">0</strong><span>builds created</span></div>
+        <div><strong id="statViews">0</strong><span>build views</span></div>
+        <div><strong id="statShares">0</strong><span>shares</span></div>
+      </div>
+    </div>
+    <div class="hero-visual reveal delay-1">
+      <div class="hero-orbit orbit-1"></div><div class="hero-orbit orbit-2"></div>
+      <div class="build-preview-card">
+        <div class="preview-top"><span class="tiny-label">LIVE PREVIEW</span><span class="status-pill"><i></i> matching</span></div>
+        <div class="pc-silhouette">
+          <div class="pc-frame"><div class="pc-window"></div><div class="pc-light"></div><div class="pc-bars"><span></span><span></span><span></span></div></div>
+          <div class="pc-screen"><div class="screen-glow"></div><div class="screen-lines"><span></span><span></span><span></span></div></div>
+        </div>
+        <div class="preview-bottom"><div><span class="muted">Your budget</span><strong id="heroBudget">$800</strong></div><div><span class="muted">Best-fit</span><strong id="heroFit">—</strong></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="marquee-band"><div class="marquee-track"><span>FIND THE SWEET SPOT</span><b>✦</b><span>COMPARE THE REAL OPTIONS</span><b>✦</b><span>SPEND SMARTER</span><b>✦</b><span>BUILD WITH CONFIDENCE</span><b>✦</b><span>FIND THE SWEET SPOT</span><b>✦</b></div></section>
+
+  <section class="section shell" id="builder">
+    <div class="section-head reveal"><div><span class="section-kicker">01 · DISCOVER</span><h2>Let’s make this easy.</h2></div><p>Only budget is required. Everything else simply makes the match sharper.</p></div>
+
+    <div class="wizard-card reveal delay-1">
+      <div class="wizard-progress"><div class="wizard-progress-fill" id="progressFill"></div></div>
+      <div class="wizard-meta"><span id="stepLabel">Step 1 of 5</span><button class="mini-link" id="skipStep">Skip</button></div>
+
+      <div class="wizard-step active" data-step="1">
+        <div class="step-copy"><span class="step-kicker">WHAT ARE WE LOOKING FOR?</span><h3>Pick the kind of machine.<br><em>Or let us decide.</em></h3><p>You can change this later without starting over.</p></div>
+        <div class="choice-grid device-grid">
+          <button class="choice-card" data-device="desktop"><span class="choice-icon">🖥️</span><strong>Desktop PC</strong><small>Build or buy a desktop</small></button>
+          <button class="choice-card" data-device="laptop"><span class="choice-icon">💻</span><strong>Laptop</strong><small>Portable gaming & work</small></button>
+          <button class="choice-card" data-device="prebuilt"><span class="choice-icon">🏭</span><strong>Prebuilt</strong><small>Ready to use</small></button>
+          <button class="choice-card" data-device="custom"><span class="choice-icon">🧩</span><strong>Custom build</strong><small>More control, same goal</small></button>
+          <button class="choice-card" data-device="used"><span class="choice-icon">♻️</span><strong>Used / refurbished</strong><small>Stretch the budget</small></button>
+          <button class="choice-card" data-device="not_sure"><span class="choice-icon">✦</span><strong>I’m not sure</strong><small>Help me decide</small></button>
+        </div>
+      </div>
+
+      <div class="wizard-step" data-step="2">
+        <div class="step-copy"><span class="step-kicker">HOW MUCH ARE WE WORKING WITH?</span><h3>Your budget is the <em>hard ceiling.</em></h3><p>We won’t spend money just because it’s available.</p></div>
+        <div class="budget-zone">
+          <div class="budget-display"><span id="currencySymbol">$</span><input id="budgetInput" inputmode="decimal" value="800" aria-label="Budget"><span class="budget-currency" id="budgetCurrency">USD</span></div>
+          <input type="range" id="budgetSlider" min="150" max="10000" step="10" value="800" aria-label="Budget slider">
+          <div class="range-labels"><span>150</span><span>1,000</span><span>2,500</span><span>5,000+</span></div>
+          <div class="budget-note"><span>💡</span><span>You can always refine the result later.</span></div>
+        </div>
+      </div>
+
+      <div class="wizard-step" data-step="3">
+        <div class="step-copy"><span class="step-kicker">WHAT ARE YOU USING IT FOR?</span><h3>Choose what <em>matters most.</em></h3><p>Nothing here is mandatory.</p></div>
+        <div class="choice-grid goal-grid">
+          <button class="choice-card toggle-card" data-goal="Gaming"><span class="choice-icon">🎮</span><strong>Gaming</strong><small>I want games to feel great</small></button>
+          <button class="choice-card toggle-card" data-goal="Streaming"><span class="choice-icon">🎥</span><strong>Gaming + streaming</strong><small>Play and broadcast</small></button>
+          <button class="choice-card toggle-card" data-goal="Creation"><span class="choice-icon">🎬</span><strong>Creation</strong><small>Edit, render, create</small></button>
+          <button class="choice-card toggle-card" data-goal="Work"><span class="choice-icon">💻</span><strong>Work + play</strong><small>One machine for everything</small></button>
+          <button class="choice-card toggle-card" data-goal="AI"><span class="choice-icon">🧠</span><strong>AI / compute</strong><small>Local workloads matter</small></button>
+          <button class="choice-card toggle-card" data-goal="Future-proof"><span class="choice-icon">🚀</span><strong>Future-proof</strong><small>Keep it useful longer</small></button>
+        </div>
+      </div>
+
+      <div class="wizard-step" data-step="4">
+        <div class="step-copy"><span class="step-kicker">GIVE US A LITTLE MORE</span><h3>Only if you want a <em>tighter match.</em></h3><p>Skip anything you don’t know.</p></div>
+        <div class="optional-grid">
+          <div class="mini-panel"><div class="panel-label">Games</div><div class="tag-cloud" id="gameTags"></div></div>
+          <div class="mini-panel"><div class="panel-label">What matters?</div><div class="tag-cloud"><button class="tag" data-pref="Quiet">🤫 Quiet</button><button class="tag" data-pref="Wi-Fi">📶 Wi-Fi</button><button class="tag" data-pref="Small">📦 Small</button><button class="tag" data-pref="Future-proof">🚀 Future-proof</button></div></div>
+          <div class="mini-panel"><div class="panel-label">Target FPS</div><div class="seg-row"><button class="seg" data-fps="60">60</button><button class="seg" data-fps="120">120</button><button class="seg" data-fps="144">144</button><button class="seg" data-fps="240">240+</button></div></div>
+          <div class="mini-panel"><div class="panel-label">Resolution</div><div class="seg-row"><button class="seg" data-res="1080p">1080p</button><button class="seg" data-res="1440p">1440p</button><button class="seg" data-res="4K">4K</button><button class="seg" data-res="smart">Not sure</button></div></div>
+          <div class="mini-panel laptop-extras" id="laptopExtras" hidden><div class="panel-label">Laptop priorities</div><div class="tag-cloud"><button class="tag" data-lpref="Lightweight">🪶 Lightweight</button><button class="tag" data-lpref="Long battery">🔋 Long battery</button><button class="tag" data-lpref="High refresh">⚡ High refresh</button><button class="tag" data-lpref="Large screen">🖥️ Large screen</button><button class="tag" data-lpref="Creator">🎨 Creator</button><button class="tag" data-lpref="Portable">🎒 Portable</button></div></div>
+        </div>
+      </div>
+
+      <div class="wizard-step" data-step="5">
+        <div class="step-copy"><span class="step-kicker">LAST QUICK CHECK</span><h3>Do you already own <em>anything?</em></h3><p>We’ll avoid buying duplicates.</p></div>
+        <div class="choice-grid existing-grid">
+          <button class="choice-card toggle-card" data-existing="Monitor"><span class="choice-icon">🖥️</span><strong>Monitor</strong></button>
+          <button class="choice-card toggle-card" data-existing="SSD"><span class="choice-icon">💾</span><strong>SSD</strong></button>
+          <button class="choice-card toggle-card" data-existing="RAM"><span class="choice-icon">🧠</span><strong>RAM</strong></button>
+          <button class="choice-card toggle-card" data-existing="Case"><span class="choice-icon">🧱</span><strong>Case</strong></button>
+          <button class="choice-card toggle-card" data-existing="PSU"><span class="choice-icon">⚡</span><strong>Power supply</strong></button>
+          <button class="choice-card toggle-card" data-existing="Nothing"><span class="choice-icon">✦</span><strong>Nothing yet</strong></button>
+        </div>
+      </div>
+
+      <div class="wizard-actions"><button class="back-btn" id="backBtn">← Back</button><div class="wizard-side-note" id="wizardNote">Budget is enough to start.</div><button class="primary-btn" id="nextBtn">Continue <span>→</span></button></div>
+    </div>
+  </section>
+
+  <section class="section result-shell shell" id="results">
+    <div class="section-head reveal"><div><span class="section-kicker">02 · MATCH</span><h2>Your money, <em>translated.</em></h2></div><p>Results are ranked for fit — not just raw performance.</p></div>
+    <div class="result-layout">
+      <aside class="result-summary reveal"><div class="summary-card"><div class="summary-top"><span class="tiny-label">YOUR BRIEF</span><button class="mini-link" id="editBtn">Edit</button></div><div id="briefChips" class="brief-chips"></div><div class="summary-budget"><span>Budget</span><strong id="summaryBudget">$800</strong></div><div class="summary-line"><span>Market</span><strong id="summaryMarket">US · USD</strong></div><div class="summary-line"><span>Direction</span><strong id="summaryDirection">Smart buy</strong></div></div><a class="tip-card" href="https://ko-fi.com/simbawwyy00" target="_blank" rel="noopener"><div><span class="tip-title">☕ Keep BuildYourPC free</span><span>Support independent tools.</span></div><strong>Leave a tip →</strong></a></aside>
+      <div class="results-main">
+        <div class="result-switcher reveal"><div class="result-title"><span class="live-dot"></span> Match ready</div><div class="preset-tabs"><button class="preset-tab active" data-preset="smart">🧠 Smart Buy</button><button class="preset-tab" data-preset="speed">⚡ Speed Demon</button><button class="preset-tab" data-preset="beast">👑 The Beast</button></div></div>
+        <div id="resultCard" class="result-card reveal delay-1"></div>
+        <div class="whatif-grid reveal delay-2">
+          <button class="whatif-card" data-whatif="500"><span>💰</span><div><strong id="whatIfBudgetTitle">I can add more</strong><small>Where should it go?</small></div><b>→</b></button>
+          <button class="whatif-card" data-whatif="fps"><span>🎯</span><div><strong>I want more FPS</strong><small>Only if it actually helps</small></div><b>→</b></button>
+          <button class="whatif-card" data-whatif="quiet"><span>🤫</span><div><strong>Make it quieter</strong><small>Less noise, same goal</small></div><b>→</b></button>
+          <button class="whatif-card" data-whatif="future"><span>🚀</span><div><strong>Make it last longer</strong><small>Improve the upgrade path</small></div><b>→</b></button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section shell" id="explore">
+    <div class="section-head reveal"><div><span class="section-kicker">03 · EXPLORE</span><h2>Builds worth <em>stealing ideas from.</em></h2></div><p>Shared builds are meant to be useful, remixable and honest about the trade-offs.</p></div>
+    <div class="explore-grid" id="exploreGrid">
+      <article class="explore-card featured reveal"><div class="explore-top"><span class="rank-pill">#01 · BEST VALUE</span><span>loading</span></div><div class="fake-rig"><div class="fake-monitor"></div><div class="fake-case"></div><div class="fake-desk"></div></div><div class="explore-meta"><div><h3>Loading live builds</h3><p>Shared builds will appear here as people save them.</p></div><strong>—</strong></div></article>
+    </div>
+  </section>
+
+  <section class="section shell" id="how">
+    <div class="section-head reveal"><div><span class="section-kicker">04 · WHY IT WORKS</span><h2>No PC knowledge <em>required.</em></h2></div><p>The point is to remove the guesswork, not add another spec sheet.</p></div>
+    <div class="how-grid">
+      <article class="how-card reveal"><span>01</span><h3>You tell us the outcome.</h3><p>Budget, device type, games, portability, noise — whatever you know. Nothing more is required.</p></article>
+      <article class="how-card reveal delay-1"><span>02</span><h3>We protect the budget.</h3><p>A 144 FPS target is a floor, not an excuse to buy 300 FPS. We stop spending when the goal is already met.</p></article>
+      <article class="how-card reveal delay-2"><span>03</span><h3>We show the trade-offs.</h3><p>Best value, fastest, quietest or most upgradeable — you can switch direction without rebuilding the whole brief.</p></article>
+    </div>
+  </section>
+
+  <section class="section shell tip-section">
+    <div class="tip-large reveal"><div><span class="section-kicker">KEEP IT FREE</span><h2>Built to help you spend smarter.</h2><p>We want BuildYourPC to stay useful before it ever needs to be profitable.</p></div><a class="primary-btn" href="https://ko-fi.com/simbawwyy00" target="_blank" rel="noopener">☕ Leave a Tip <span>→</span></a></div>
+  </section>
+</main>
+
+<footer class="footer shell"><div><a class="brand" href="#top"><span class="brand-mark">B</span><span>BuildYourPC</span></a><p>Your money. Your needs. Your PC.</p></div><div class="footer-links"><a href="#builder">Build</a><a href="#explore">Explore</a><a href="https://ko-fi.com/simbawwyy00" target="_blank" rel="noopener">Support</a><a href="#top">Back to top ↑</a></div><div class="footer-meta">Free MVP · Global-ready · Built for mobile + desktop</div></footer>
+
+<div class="overlay" id="overlay" hidden></div>
+<div class="language-dock" id="languageDock" hidden><div class="dock-head"><div><span class="section-kicker">LANGUAGE</span><h3>Speak your way.</h3></div><button class="close-dock" data-close>✕</button></div><input class="dock-search" id="langSearch" placeholder="Search language..."><div id="langList" class="dock-list"></div></div>
+<div class="country-dock" id="countryDock" hidden><div class="dock-head"><div><span class="section-kicker">MARKET</span><h3>Where are we shopping?</h3></div><button class="close-dock" data-close>✕</button></div><input class="dock-search" id="countrySearch" placeholder="Search country..."><div id="countryList" class="dock-list"></div></div>
+
+<script src="/config.js?v=16"></script><script src="/app.js?v=16"></script>
+</body>
+</html>
