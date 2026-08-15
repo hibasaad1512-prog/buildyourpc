@@ -9,11 +9,13 @@
   <meta property="og:description" content="Build a compatible PC, compare verified market offers, optimize your budget and understand every trade-off.">
   <meta name="theme-color" content="#08080b">
   <title>BuildYourPC — Build smarter. Buy with confidence.</title>
-  <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png"><rect width=%22100%22 height=%22100%22 rx=%2228%22 fill=%22%2308080b%22/><path d=%22M25 56c0-16 12-30 28-30h22v16H53c-7 0-12 6-12 14s5 14 12 14h22v16H53c-16 0-28-14-28-30Z%22 fill=%22%239b5cff%22/></svg>">
+  <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css?v=15">
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3776235953985777" crossorigin="anonymous"></script>
 </head>
 <body>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -171,6 +173,14 @@
   <section class="section shell tip-section">
     <div class="tip-large reveal"><div><span class="section-kicker">KEEP IT FREE</span><h2>Built to help you spend smarter.</h2><p>We want BuildYourPC to stay useful before it ever needs to be profitable.</p></div><a class="primary-btn" href="https://ko-fi.com/simbawwyy00" target="_blank" rel="noopener">☕ Leave a Tip <span>→</span></a></div>
   </section>
+
+  <section class="ad-section shell" id="adSection" hidden aria-label="Advertisement">
+    <div class="ad-label">Advertisement</div>
+    <div class="ad-frame">
+      <ins id="buildyourpcAd" class="adsbygoogle ad-slot" style="display:block" data-ad-client="ca-pub-3776235953985777" data-ad-slot="" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    </div>
+  </section>
+
 </main>
 
 <footer class="footer shell"><div><a class="brand" href="#top"><span class="brand-mark">B</span><span>BuildYourPC</span></a><p>Your money. Your needs. Your PC.</p></div><div class="footer-links"><a href="#builder">Build</a><a href="#explore">Explore</a><a href="https://ko-fi.com/simbawwyy00" target="_blank" rel="noopener">Support</a><a href="#top">Back to top ↑</a></div><div class="footer-meta">Free MVP · Global-ready · Built for mobile + desktop</div></footer>
@@ -179,6 +189,21 @@
 <div class="language-dock" id="languageDock" hidden><div class="dock-head"><div><span class="section-kicker">LANGUAGE</span><h3>Speak your way.</h3></div><button class="close-dock" data-close>✕</button></div><input class="dock-search" id="langSearch" placeholder="Search language..."><div id="langList" class="dock-list"></div></div>
 <div class="country-dock" id="countryDock" hidden><div class="dock-head"><div><span class="section-kicker">MARKET</span><h3>Where are we shopping?</h3></div><button class="close-dock" data-close>✕</button></div><input class="dock-search" id="countrySearch" placeholder="Search country..."><div id="countryList" class="dock-list"></div></div>
 
+
+<script>
+  // Set a real AdSense ad-unit slot ID after Google gives you one.
+  // Leaving this blank keeps the ad area hidden; no auto ads are enabled.
+  window.BUILDYOURPC_ADSENSE_SLOT_ID = window.BUILDYOURPC_ADSENSE_SLOT_ID || '';
+  window.addEventListener('DOMContentLoaded', function () {
+    var slot = window.BUILDYOURPC_ADSENSE_SLOT_ID;
+    var section = document.getElementById('adSection');
+    var ad = document.getElementById('buildyourpcAd');
+    if (!slot || !section || !ad || !window.adsbygoogle) return;
+    ad.setAttribute('data-ad-slot', slot);
+    section.hidden = false;
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+  });
+</script>
 <script src="/config.js?v=16"></script><script src="/app.js?v=16"></script>
 </body>
 </html>
